@@ -1,0 +1,52 @@
+<link rel="import" href="../bower_components/paper-card/paper-card.html">
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+<link rel="import" href="shared-styles.html">
+
+<dom-module id="main-view">
+
+  <!-- System status card. -->
+
+  <template>
+    <style include="shared-styles">
+      :host {
+        display: block;
+        padding: 10px;
+      }
+
+      .grouph[wide-layout] {
+        @apply(--layout-horizontal);
+        @apply(--layout-wrap);
+        @apply(--layout-center-justified);
+
+        width: 590px;
+        height: 200px;
+      }
+
+      .grouph:not([wide-layout]) {
+        @apply(--layout-vertical);
+
+        height: 200px;
+      }
+
+      .column-card {
+        @apply(--layout-self-stretch);
+        @apply(--layout-flex);
+      }
+    </style>
+
+    <iron-media-query query="(min-width: 900px)" query-matches="{{wide}}"></iron-media-query>
+    <div class="grouph" wide-layout$="[[wide]]">
+      <paper-card class="column-card" heading="System Status">
+        <div class="card-content">Action Required!</div>
+      </paper-card>
+    </div>
+
+  </template>
+
+  <script>
+    Polymer({
+      is: 'main-view'
+    });
+  </script>
+</dom-module>
