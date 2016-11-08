@@ -1,4 +1,9 @@
 <link rel="import" href="../bower_components/paper-card/paper-card.html">
+<link rel="import" href="../bower_components/paper-listbox/paper-listbox.html">
+<link rel="import" href="../bower_components/paper-item/paper-item.html">
+<link rel="import" href="../bower_components/paper-item/paper-item-body.html">
+<link rel="import" href="../bower_components/paper-item/paper-icon-item.html">
+<link rel="import" href="../bower_components/paper-styles/typography.html">
 <link rel="import" href="../bower_components/polymer/polymer.html">
 <link rel="import" href="../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
 <link rel="import" href="shared-styles.html">
@@ -20,25 +25,97 @@
         @apply(--layout-center-justified);
 
         width: 590px;
-        height: 200px;
       }
 
       .grouph:not([wide-layout]) {
         @apply(--layout-vertical);
-
-        height: 200px;
       }
 
       .column-card {
         @apply(--layout-self-stretch);
         @apply(--layout-flex);
       }
+
+      .status-header {
+        @apply(--paper-font-headline);
+      }
+
+      .status-icon {
+        font-size: 18px;
+        vertical-align: middle;
+        float: right;
+      }
+
+      .icon {
+        width: 30px;
+        height: 30px;
+        vertical-align: middle;
+        padding-right: 5px;
+      }
+
+      .text-light {
+        color: var(--paper-grey-600);
+      }
+
+      .status-item-title {
+        font-size: 20px;
+      }
     </style>
 
     <iron-media-query query="(min-width: 900px)" query-matches="{{wide}}"></iron-media-query>
     <div class="grouph" wide-layout$="[[wide]]">
-      <paper-card class="column-card" heading="System Status">
-        <div class="card-content">Action Required!</div>
+      <paper-card class="column-card">
+        <div class="card-content">
+          <div class="status-header">System Status
+            <div class="status-icon">
+              <img class="icon" src="../images/icon_error.svg" alt="error cross">
+              <span class="text-light">Action Required!</span>
+            </div>
+          </div>
+
+          <p class="text-light">Uh-oh! It looks like there are some problems
+                                with your GroBot.<br>See below for details.</p>
+
+          <paper-listbox>
+            <paper-item>
+              <paper-item-body two-line>
+                <div class="status-item-title">Water is low.</div>
+                <div class="text-light">Please add water to the system.</div>
+              </paper-item-body>
+              <paper-icon-item>
+                <img class="icon status-icon" src="../images/icon_error.svg" alt="error cross">
+              </paper-icon-item>
+            </paper-item>
+            <paper-item>
+              <paper-item-body two-line>
+                <div class="status-item-title">PH solution is low.</div>
+                <div class="text-light">Please refill the PH reservoir.</div>
+              </paper-item-body>
+              <paper-icon-item>
+                <img class="icon status-icon" src="../images/icon_error.svg" alt="error cross">
+              </paper-icon-item>
+            </paper-item>
+            <paper-item>
+              <paper-item-body two-line>
+                <div class="status-item-title">Ambient temperature is low.</div>
+                <div class="text-light">A warmer location is optimal for growing.</div>
+              </paper-item-body>
+              <paper-icon-item>
+                <img class="icon status-icon" src="../images/icon_warning.svg" alt="error cross">
+              </paper-icon-item>
+            </paper-item>
+            <paper-item>
+              <paper-item-body two-line>
+                <div class="status-item-title">System is running.</div>
+                <div class="text-light">Your GroBot is powered on and active.</div>
+              </paper-item-body>
+              <paper-icon-item>
+                <img class="icon status-icon" src="../images/icon_check.svg" alt="error cross">
+              </paper-icon-item>
+            </paper-item>
+          </paper-listbox>
+
+        </div>
       </paper-card>
     </div>
 
