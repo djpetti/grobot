@@ -3,6 +3,7 @@
 <link rel="import" href="../bower_components/paper-item/paper-item.html">
 <link rel="import" href="../bower_components/paper-item/paper-item-body.html">
 <link rel="import" href="../bower_components/paper-item/paper-icon-item.html">
+<link rel="import" href="../bower_components/paper-progress/paper-progress.html">
 <link rel="import" href="../bower_components/paper-styles/typography.html">
 <link rel="import" href="../bower_components/polymer/polymer.html">
 <link rel="import" href="../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
@@ -24,7 +25,7 @@
         @apply(--layout-wrap);
         @apply(--layout-center-justified);
 
-        width: 590px;
+        width: 100%;
       }
 
       .grouph:not([wide-layout]) {
@@ -32,8 +33,11 @@
       }
 
       .column-card {
-        @apply(--layout-self-stretch);
+        @apply(--layout-self-start);
         @apply(--layout-flex);
+
+        margin: 20px;
+        min-width: 500px;
       }
 
       .status-header {
@@ -44,6 +48,14 @@
         font-size: 18px;
         vertical-align: middle;
         float: right;
+      }
+
+      .grow-icon {
+        width: 60px;
+        height: 60px;
+        float: right;
+        vertical-align: middle;
+        margin-bottom: 10px;
       }
 
       .icon {
@@ -60,10 +72,22 @@
       .status-item-title {
         font-size: 20px;
       }
+
+      .heading-white {
+        --paper-card-header-color: #FFFFFF;
+      }
+
+      .grow-progress {
+        --paper-progress-active-color: #21DB67;
+
+        width: 90%;
+        margin-top: 10px;
+      }
     </style>
 
     <iron-media-query query="(min-width: 900px)" query-matches="{{wide}}"></iron-media-query>
     <div class="grouph" wide-layout$="[[wide]]">
+
       <paper-card class="column-card">
         <div class="card-content">
           <div class="status-header">System Status
@@ -115,6 +139,44 @@
             </paper-item>
           </paper-listbox>
 
+        </div>
+      </paper-card>
+
+      <paper-card class="column-card heading-white" heading="Growing Progress"
+                  image="../images/plants-growing.svg" alt="Plants Growing">
+        <div class="card-content">
+          <paper-listbox>
+            <paper-item>
+              <paper-item-body two-line>
+                <div class="status-item-title">Lettuce</div>
+                <div class="text-light">10 days remaining.</div>
+                <paper-progress class="grow-progress" value="60" min="0" max="100"></paper-progress>
+              </paper-item-body>
+              <paper-item-icon>
+                <img class="grow-icon" src="../images/icon_lettuce.svg" alt="lettuce icon">
+              </paper-item-icon>
+            </paper-item>
+            <paper-item>
+              <paper-item-body>
+                <div class="status-item-title">Basil</div>
+                <div class="text-light">30 days remaining.</div>
+                <paper-progress class="grow-progress" value="10" min="0" max="100"></paper-progress>
+              </paper-item-body>
+              <paper-item-icon>
+                <img class="grow-icon" src="../images/icon_basil.svg" alt="basil icon">
+              </paper-item-icon>
+            </paper-item>
+            <paper-item>
+              <paper-item-body>
+                <div class="status-item-title">Kale</div>
+                <div class="text-light">22 days remaining.</div>
+                <paper-progress class="grow-progress" value="35" min="0" max="100"></paper-progress>
+              </paper-item-body>
+              <paper-item-icon>
+                <img class="grow-icon" src="../images/icon_kale.svg" alt="kale icon">
+              </paper-item-icon>
+            </paper-item>
+          </paper-listbox>
         </div>
       </paper-card>
     </div>
