@@ -1,5 +1,6 @@
 #include "messaging.h"
 
+#include <stdio.h>
 #include <string.h>
 
 #include <project.h>
@@ -7,12 +8,11 @@
 #include "config.h"
 
 // Size of the slave receiving data buffer.
-#define RECV_BUFFER_SIZE 128
+#define RECV_BUFFER_SIZE 64
 // Size of the slave sending data buffer.
-#define SEND_BUFFER_SIZE 128
-
-// Array that maps an I2C address to each module number.
-uint8_t g_module_addresses[255];
+#define SEND_BUFFER_SIZE 64
+// Size of the message scratch space.
+#define MESSAGE_SCRATCH_SIZE 64
 
 // Stores the most recently partially received message from acting as a
 // master and a slave, and for the UART.
@@ -29,6 +29,16 @@ bool g_new_message = false;
 uint8_t g_slave_recv_buffer[RECV_BUFFER_SIZE];
 // The I2C read buffer to use when operating in slave mode.
 uint8_t g_slave_send_buffer[SEND_BUFFER_SIZE];
+// Scratch space for building sent messages.
+char g_message_scratch[MESSAGE_SCRATCH_SIZE];
+
+// We need to keep track of our controller ID. If this is the base system, it
+// will always be 2, otherwise it will be assigned by prime later.
+#ifdef IS_BASE_CONTROLLER
+uint8_t g_controller_id = 2;
+#else
+uint8_t g_controller_id = 0;
+#endif
 
 // Procedures for handling a byte that are common across the master, slave,
 // and UART interfaces.
@@ -119,10 +129,10 @@ bool messaging_init() {
   PRIME_UART_Start();
   
   // This message should be immediately acknowledged.
-  PRIME_UART_PutString("<PING>");
+  messaging_send_message(1, "PING", "");
   
   // Wait for acknowledgement.
-  const char *kExpected = "<PING/prime>";
+  const char *kExpected = "<PING/12/ack>";
   char received[strlen(kExpected) + 1];
   // Terminating null.
   received[strlen(kExpected)] = '\0';
@@ -154,15 +164,12 @@ bool messaging_init() {
   // Set the interrupt handler.
   STACK_I2C_SetCustomInterruptHandler(_handle_i2c);
   
-  // In order to set our address in a way that does not conflict, we're first
-  // going to send out a ping on the general call address, so we can get
-  // everyone else's address.
-  const char *kPing = "<PING>";
-  STACK_I2C_I2CMasterWriteBuf(0x00, (uint8_t *)kPing, strlen(kPing) + 1,
-                              STACK_I2C_I2C_MODE_COMPLETE_XFER);
+  // Request a controller ID, if we need one.
+  if (!g_controller_id) {
+    messaging_send_message(1, "REQID", "");
+  }
   
-  // Responses to the ping will be handled by the ISR, and the address array
-  // will be updated accordingly, so we can just go on for now.
+  // Responses will be handled by the ISR, so we can just go on for now.
   return true;
 }
 
@@ -171,4 +178,59 @@ void messaging_get_message(struct Message *message) {
   while (!g_new_message);
   memcpy(message, &g_newest_message, sizeof(g_newest_message));
   g_new_message = false;
+}
+
+void messaging_send_message(uint8_t destination, const char *command,
+                            const char *fields) {
+  // Format message.
+  const char *fields_format = "<%s/%u%u/%s>";
+  const char *no_fields_format = "<%s/%u%u%s>";
+  const char **format = &fields_format;
+  if (!strlen(fields)) {
+    // Don't put a trailing slash if we have no fields.
+    format = &no_fields_format;
+  }
+  
+  snprintf(g_message_scratch, MESSAGE_SCRATCH_SIZE, *format, command,
+           g_controller_id, destination, fields);
+  const uint8_t message_size = strlen(g_message_scratch) + 1;
+
+#ifdef IS_BASE_CONTROLLER
+  if (destination == 1) {
+    // We can send it directly to prime.
+    PRIME_UART_PutString(g_message_scratch);
+    return;
+  }
+#else
+  if (destination == 1) {
+    // Either way, we're going to have to forward it through the base module
+    // controller.
+    destination = 2;
+  }
+#endif
+
+  // Handle everything else.
+  STACK_I2C_I2CMasterWriteBuf(destination, (uint8_t *)g_message_scratch,
+                              message_size,
+                              STACK_I2C_I2C_MODE_COMPLETE_XFER);
+}
+                            
+void messaging_set_controller_id(uint8_t id) {
+  if (g_controller_id != 0) {
+    // It's already been set. Don't change it.
+    return;
+  }
+  g_controller_id = id;
+  
+  // Set this as our I2C address.
+  STACK_I2C_I2CSlaveSetAddress(id);
+  
+  // Blink our ID.
+  uint8_t i;
+  for (i = 0; i < g_controller_id; ++i) {
+    STATUS_LED_Write(1);
+    CyDelay(250);
+    STATUS_LED_Write(0);
+    CyDelay(250);
+  }
 }

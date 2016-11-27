@@ -16,6 +16,10 @@ enum State {
   READING_START,
   // We're reading the command.
   READING_COMMAND,
+  // We're reading the source field.
+  READING_SOURCE,
+  // We're reading the destination field.
+  READING_DEST,
   // We're reading the fields.
   READING_FIELD,
   // Done reading the message.
@@ -26,6 +30,14 @@ enum State {
 struct Message {
   // The command associated with the message.
   char command[COMMAND_LENGTH];
+  // The source of the message. Sources and destinations are numbered as
+  // follows: 0 is broadcast, 1 is prime, 2 is the base system controller, and
+  // 3 and above are module controllers, starting with the lowest one. 0 is also
+  // a valid attribute for the source attribute in cases where we don't know
+  // who we are yet.
+  uint8_t source;
+  // The destination of the message.
+  uint8_t dest;
   // The fields associated with the message.
   char fields[NUM_FIELDS * FIELD_LENGTH];
   

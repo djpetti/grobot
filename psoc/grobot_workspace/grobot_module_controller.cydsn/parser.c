@@ -23,28 +23,48 @@ bool parser_parse_byte(struct Message *message, char byte) {
     case READING_COMMAND:
       // All bytes read now are part of the command, until we hit a slash.
       if (byte == '/') {
+        // Add trailing null.
+        message->command[message->write_counter] = '\0';
         // We're done reading the command.
         message->write_counter = 0;
-        message->parser_state = READING_FIELD;
-        break;
-      }
-      if (byte == '>') {
-        // There are legal commands that have no fields.
-        message->parser_state = DONE;
+        message->parser_state = READING_SOURCE;
         break;
       }
       message->command[message->write_counter++] = byte;
       break;
       
+    case READING_SOURCE:
+        // The source should be a single char. Convert from a char to an int.
+        message->source = byte - 48;
+        message->parser_state = READING_DEST;
+        break;
+      
+    case READING_DEST:
+        if (byte == '/') {
+          // The source and dest are separated from the rest of the message
+          // with a slash.
+          message->parser_state = READING_FIELD;
+          break;
+        }
+        if (byte == '>') {
+          // Some valid commands have no fields.
+          message->parser_state = DONE;
+          break;
+        }
+        // The dest should also be a single character. Convert from a char to
+        // an int.
+        message->dest = byte - 48;
+        break;
+      
     case READING_FIELD:
         // All bytes are part of this field, until we hit a control character.
         if (byte == '/') {
-          // We hit the end of this field. 
-          ++message->write_field;
+          // We hit the end of this field.
           // We're going to put a null character at the end, just so we can
           // easily treat the field values as strings.
           message->fields[message->write_field * FIELD_LENGTH +
                           message->write_counter] = '\0';
+          ++message->write_field;
           message->write_counter = 0;
           break;
         }
