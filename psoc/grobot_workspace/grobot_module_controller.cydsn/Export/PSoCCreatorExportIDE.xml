@@ -27,7 +27,7 @@
   </Toolchains>
   <Project Name="grobot_module_controller" Path="C:\Users\pettid\git\grobot\psoc\grobot_workspace\grobot_module_controller.cydsn" Version="5.40" Type="Bootloadable">
     <CMSIS_SVD_File>grobot_module_controller.svd</CMSIS_SVD_File>
-    <Datasheet />
+    <Datasheet>grobot_module_controller_datasheet.pdf</Datasheet>
     <LinkerFiles>
       <LinkerFile Toolchain="ARM GCC Generic">.\Generated_Source\PSoC4\cm0gcc.ld</LinkerFile>
       <LinkerFile Toolchain="ARM MDK Generic">.\Generated_Source\PSoC4\Cm0RealView.scat</LinkerFile>
@@ -39,10 +39,12 @@
           <File BuildType="BUILD" Toolchain="">.\main.c</File>
           <File BuildType="BUILD" Toolchain="">.\messaging.c</File>
           <File BuildType="BUILD" Toolchain="">.\parser.c</File>
+          <File BuildType="BUILD" Toolchain="">.\sensors.c</File>
           <File BuildType="BUILD" Toolchain="">.\cyapicallbacks.h</File>
           <File BuildType="BUILD" Toolchain="">.\config.h</File>
           <File BuildType="BUILD" Toolchain="">.\messaging.h</File>
           <File BuildType="BUILD" Toolchain="">.\parser.h</File>
+          <File BuildType="BUILD" Toolchain="">.\sensors.h</File>
         </Files>
       </Folder>
       <Folder BuildType="STRICT" Path="C:\Users\pettid\git\grobot\psoc\grobot_workspace\grobot_module_controller.cydsn\Generated_Source\PSoC4">
@@ -62,8 +64,16 @@
           <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PRIME_UART.c</File>
           <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PRIME_UART.h</File>
           <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PRIME_UART_PM.c</File>
-          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PRIME_UART_INT.c</File>
           <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PRIME_UART_BOOT.c</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PRIME_UART_SPI_UART.h</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PRIME_UART_SPI_UART.c</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PRIME_UART_SPI_UART_INT.c</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PRIME_UART_UART.c</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PRIME_UART_UART_BOOT.c</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PRIME_UART_PINS.h</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PRIME_UART_SPI_UART_PVT.h</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PRIME_UART_PVT.h</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PRIME_UART_BOOT.h</File>
           <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\STACK_I2C.c</File>
           <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\STACK_I2C.h</File>
           <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\STACK_I2C_I2C.h</File>
@@ -78,8 +88,6 @@
           <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\STACK_I2C_I2C_PVT.h</File>
           <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\STACK_I2C_PVT.h</File>
           <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\STACK_I2C_BOOT.h</File>
-          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PRIME_UART_IntClock.c</File>
-          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PRIME_UART_IntClock.h</File>
           <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\STACK_I2C_SCBCLK.c</File>
           <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\STACK_I2C_SCBCLK.h</File>
           <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\STACK_I2C_sda.c</File>
@@ -130,6 +138,57 @@
           <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\cybootloader.c</File>
           <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\BOOTLOABABLE.c</File>
           <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\BOOTLOABABLE.h</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\SENSOR_CLOCK.c</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\SENSOR_CLOCK.h</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\SENSOR_INT.c</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\SENSOR_INT.h</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\SENSOR_TIMER.c</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\SENSOR_TIMER.h</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\SENSOR_TIMER_PM.c</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\RED_LED_TEMP.c</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\RED_LED_TEMP.h</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\RED_LED_TEMP_aliases.h</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\RED_LED_TEMP_PM.c</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\WHITE_LED_TEMP.c</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\WHITE_LED_TEMP.h</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\WHITE_LED_TEMP_aliases.h</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\WHITE_LED_TEMP_PM.c</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\BLUE_LED_TEMP.c</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\BLUE_LED_TEMP.h</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\BLUE_LED_TEMP_aliases.h</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\BLUE_LED_TEMP_PM.c</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\LED_MOSFET.c</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\LED_MOSFET.h</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\LED_MOSFET_aliases.h</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\LED_MOSFET_PM.c</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PWM_RED_WHITE.c</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PWM_RED_WHITE.h</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PWM_RED_WHITE_PM.c</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PWM_BLUE.c</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PWM_BLUE.h</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PWM_BLUE_PM.c</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PWM_RED_PIN.c</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PWM_RED_PIN.h</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PWM_RED_PIN_aliases.h</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PWM_RED_PIN_PM.c</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PWM_WHITE_PIN.c</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PWM_WHITE_PIN.h</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PWM_WHITE_PIN_aliases.h</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PWM_WHITE_PIN_PM.c</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PWM_BLUE_PIN.c</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PWM_BLUE_PIN.h</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PWM_BLUE_PIN_aliases.h</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PWM_BLUE_PIN_PM.c</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PRIME_UART_SCBCLK.c</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PRIME_UART_SCBCLK.h</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PRIME_UART_tx.c</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PRIME_UART_tx.h</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PRIME_UART_tx_aliases.h</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PRIME_UART_tx_PM.c</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PRIME_UART_rx.c</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PRIME_UART_rx.h</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PRIME_UART_rx_aliases.h</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PRIME_UART_rx_PM.c</File>
         </Files>
       </Folder>
       <Folder BuildType="STRICT" Path="C:\Users\pettid\git\grobot\psoc\grobot_workspace\grobot_module_controller.cydsn\Export\ARM_GCC_Generic">

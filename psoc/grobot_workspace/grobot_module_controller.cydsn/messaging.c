@@ -85,10 +85,10 @@ void _handle_master_response() {
 // Handle a response from the UART.
 CY_ISR(_handle_uart_response) {
   // Clear the interrupt and get the status.
-  uint8_t status = PRIME_UART_ReadRxStatus();
-  if ((status & PRIME_UART_RX_STS_PAR_ERROR) ||
-      (status & PRIME_UART_RX_STS_STOP_ERROR) ||
-      (status & PRIME_UART_RX_STS_OVERRUN)) {
+  uint32_t status = PRIME_UART_GetRxInterruptSource();
+  if ((status & PRIME_UART_INTR_RX_OVERFLOW) ||
+      (status & PRIME_UART_INTR_RX_FRAME_ERROR) ||
+      (status & PRIME_UART_INTR_RX_PARITY_ERROR)) {
     // An error occurred. The current message is most likely corrupted now,
     // so we're going to drop it.
     parser_message_init(&g_uart_message_part);
@@ -97,7 +97,7 @@ CY_ISR(_handle_uart_response) {
       
   // Read the byte. (We should never get an error condition, because we
   // already checked for that with the status).
-  char byte = PRIME_UART_GetChar();
+  char byte = PRIME_UART_UartGetChar();
   _handle_byte_common(&g_uart_message_part, byte);
 }
 #endif
@@ -139,7 +139,7 @@ bool messaging_init(void (*message_handler)(struct Message message)) {
   for (i = 0; i < strlen(kExpected); ++i) {
     received[i] = 0;
     while (!received[i]) {
-      received[i] = PRIME_UART_GetChar();
+      received[i] = PRIME_UART_UartGetChar();
     }
   }
 
@@ -190,7 +190,7 @@ void messaging_send_message(uint8_t destination, const char *command,
 #ifdef IS_BASE_CONTROLLER
   if (destination == 1) {
     // We can send it directly to prime.
-    PRIME_UART_PutString(g_message_scratch);
+    PRIME_UART_UartPutString(g_message_scratch);
     return;
   }
 #else

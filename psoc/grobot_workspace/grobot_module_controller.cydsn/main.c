@@ -4,6 +4,7 @@
 #include <project.h>
 
 #include "messaging.h"
+#include "sensors.h"
 
 // Process a PING command.
 // Args:
@@ -60,7 +61,12 @@ int main()
     // Enable global interrupts.
     CyGlobalIntEnable;
   
-    // Initialize messaging, with the callback.
+    // Register sensor interrupt.
+    SENSOR_INT_StartEx(sensors_run_iteration);
+    SENSOR_TIMER_Start();
+  
+    // Initialize messaging, with the callback. Do this at the end, because
+    // it might wait for responses from other nodes.
     messaging_init(_process_message);
     
     return 0;
