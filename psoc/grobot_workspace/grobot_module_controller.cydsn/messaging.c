@@ -19,11 +19,6 @@
 struct Message g_master_message_part;
 struct Message g_slave_message_part;
 struct Message g_uart_message_part;
-// Stores the most recently received message from any source.
-// TODO (danielp): Make this an actual queue.
-struct Message g_newest_message;
-// Flag that is set whenever g_newest_message is updated.
-bool g_new_message = false;
 
 // The I2C write buffer to use when operating in slave mode.
 uint8_t g_slave_recv_buffer[RECV_BUFFER_SIZE];
@@ -40,6 +35,9 @@ uint8_t g_controller_id = 2;
 uint8_t g_controller_id = 0;
 #endif
 
+// Callback for handling received messages.
+void (*g_message_handler)(struct Message message);
+
 // Procedures for handling a byte that are common across the master, slave,
 // and UART interfaces.
 // Args:
@@ -48,9 +46,8 @@ uint8_t g_controller_id = 0;
 void _handle_byte_common(struct Message *message_part, uint8_t byte) {
   // Parse the byte.
   if (parser_parse_byte(message_part, byte)) {
-    // We have a complete message.
-    memcpy(&g_newest_message, message_part, sizeof(*message_part));
-    g_new_message = true;
+    // We have a complete message. Run the callback.
+    g_message_handler(*message_part);
     parser_message_init(message_part);
   }
 }
@@ -120,7 +117,9 @@ CY_ISR(_handle_i2c) {
   }
 }
 
-bool messaging_init() {
+bool messaging_init(void (*message_handler)(struct Message message)) {
+  g_message_handler = message_handler;
+  
 #ifdef IS_BASE_CONTROLLER
   parser_message_init(&g_uart_message_part);
   
@@ -171,13 +170,6 @@ bool messaging_init() {
   
   // Responses will be handled by the ISR, so we can just go on for now.
   return true;
-}
-
-void messaging_get_message(struct Message *message) {
-  // Get the newest message.
-  while (!g_new_message);
-  memcpy(message, &g_newest_message, sizeof(g_newest_message));
-  g_new_message = false;
 }
 
 void messaging_send_message(uint8_t destination, const char *command,

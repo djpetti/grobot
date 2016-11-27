@@ -49,10 +49,10 @@ void _process_set_id(const struct Message *message) {
 // Processes incoming messages.
 // Args:
 //  message: The incoming message to process.
-void _process_message(const struct Message *message) {
+void _process_message(struct Message message) {
   // One of these functions will handle it...
-  _process_ping(message);
-  _process_set_id(message);
+  _process_ping(&message);
+  _process_set_id(&message);
 }
 
 int main()
@@ -60,16 +60,8 @@ int main()
     // Enable global interrupts.
     CyGlobalIntEnable;
   
-    // Initialize messaging.
-    messaging_init();
-    
-    // Read a message, and turn on the LED.
-    struct Message message;
-    while (true) {
-      messaging_get_message(&message);
-      
-      _process_message(&message);
-    }
+    // Initialize messaging, with the callback.
+    messaging_init(_process_message);
     
     return 0;
 }

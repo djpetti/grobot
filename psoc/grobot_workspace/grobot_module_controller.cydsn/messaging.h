@@ -12,9 +12,13 @@
 // Initialize the message passing interface. This will automatically perform
 // the necessary handshakes and all to make sure that this controller can
 // talk to the rest of the system.
+// Args:
+//  message_handler: Callback to use whenever a new message is received. It
+//                   will be passed a copy of the received message as an
+//                   argument.
 // Returns:
 //  True if initialization succeeds, false otherwise.
-bool messaging_init();
+bool messaging_init(void (*message_handler)(struct Message message));
 // Performs a graceful exit from the system. Much of the time, this won't
 // happen, because people will just remove modules from the system with no
 // prior notice, but when it can be called, it's nice to do so.
@@ -28,10 +32,6 @@ bool messaging_init();
 //  fields: The /-separated fields associated with the message.
 void messaging_send_message(uint8_t destination, const char *command,
                             const char *fields);
-// Waits for a new message to be ready, and then goes and processes it.
-// Args:
-//  message: The message to copy the new message into.
-void messaging_get_message(struct Message *message);
 
 // Sets a new controller ID. It will only set it if it hasn't been set
 // before. Additionally, it will blink the new ID using the status LED for
