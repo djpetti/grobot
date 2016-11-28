@@ -172,8 +172,14 @@ bool messaging_init(void (*message_handler)(struct Message message)) {
   return true;
 }
 
-void messaging_send_message(uint8_t destination, const char *command,
-                            const char *fields) {
+// Common bits for sending messages.
+// Args:
+//  source: The source to put for the message.
+//  destination: The destination of the message.
+//  commnad: The command associated with the message.
+//  fields: The field string associated with the message.
+void _do_send_message(uint8_t source, uint8_t destination, const char *command,
+                      const char *fields) {
   // Format message.
   const char *fields_format = "<%s/%u%u/%s>";
   const char *no_fields_format = "<%s/%u%u%s>";
@@ -184,7 +190,7 @@ void messaging_send_message(uint8_t destination, const char *command,
   }
   
   snprintf(g_message_scratch, MESSAGE_SCRATCH_SIZE, *format, command,
-           g_controller_id, destination, fields);
+           source, destination, fields);
   const uint8_t message_size = strlen(g_message_scratch) + 1;
 
 #ifdef IS_BASE_CONTROLLER
@@ -205,6 +211,35 @@ void messaging_send_message(uint8_t destination, const char *command,
   STACK_I2C_I2CMasterWriteBuf(destination, (uint8_t *)g_message_scratch,
                               message_size,
                               STACK_I2C_I2C_MODE_COMPLETE_XFER);
+}
+
+void messaging_send_message(uint8_t destination, const char *command,
+                            const char *fields) {
+  _do_send_message(g_controller_id, destination, command, fields);
+}
+                            
+void messaging_forward_message(struct Message *message) {
+  // Really, all we need to do here is convert the fields to a field string.
+  uint8_t write_index = 0;
+  uint8_t i = 0;
+  for (i = 0; i < FIELD_LENGTH * NUM_FIELDS; ++i) {
+    // Read through each field, and shift stuff.
+    if (message->fields[i] != '\0') {
+      // This is an actual part of the field.
+      message->fields[write_index++] = message->fields[i];
+    } else if (i && message->fields[i - 1] != '\0') {
+      // This is the end of a field, so let's add a slash.
+      message->fields[write_index++] = '/';
+    }
+  }
+  
+  // Add a terminating null to cap it all off. This will replace the trailing
+  // slash that the above added.
+  message->fields[write_index - 1] = '\0';
+  
+  // Now we're ready to actually send it.
+  _do_send_message(message->source, message->dest, message->command,
+                   message->fields);
 }
                             
 void messaging_set_controller_id(uint8_t id) {

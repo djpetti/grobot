@@ -4,6 +4,7 @@
 
 #include <project.h>
 
+#include "config.h"
 #include "messaging.h"
 #include "parser.h"
 #include "sensors.h"
@@ -74,6 +75,16 @@ void _process_set_led(const struct Message *message) {
 // Args:
 //  message: The incoming message to process.
 void _process_message(struct Message message) {
+#ifdef IS_BASE_CONTROLLER
+  // If we're the base controller, we're in charge of forwarding messages
+  // from the I2C bus to prime.
+  if (message.dest == 1) {
+    // Message for prime. Send it on the UART.
+    messaging_forward_message(&message);
+    return;
+  }
+#endif
+  
   // One of these functions will handle it...
   _process_ping(&message);
   _process_set_id(&message);

@@ -32,6 +32,13 @@ bool messaging_init(void (*message_handler)(struct Message message));
 //  fields: The /-separated fields associated with the message.
 void messaging_send_message(uint8_t destination, const char *command,
                             const char *fields);
+// Sends a message directly from a message structure.
+// WARNING: To save space, this function will directly overwrite parts of the
+// message structure.
+// Args:
+//  dest: The destination of the message.
+//  message: The message to send.
+void messaging_forward_message(struct Message *message);
 
 // Sets a new controller ID. It will only set it if it hasn't been set
 // before. Additionally, it will blink the new ID using the status LED for

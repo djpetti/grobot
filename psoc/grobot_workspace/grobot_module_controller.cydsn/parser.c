@@ -5,6 +5,12 @@ void parser_message_init(struct Message *message) {
   message->parser_state = READING_START;
   message->write_counter = 0;
   message->write_field = 0;
+  
+  // Set everything to the null character in fields.
+  uint8_t i;
+  for (i = 0; i < NUM_FIELDS * FIELD_LENGTH; ++i) {
+    message->fields[i] = '\0'; 
+  }
 }
 
 bool parser_parse_byte(struct Message *message, char byte) {
