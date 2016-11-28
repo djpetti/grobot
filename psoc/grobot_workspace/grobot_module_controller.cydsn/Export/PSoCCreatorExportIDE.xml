@@ -164,9 +164,6 @@
           <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PWM_RED_WHITE.c</File>
           <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PWM_RED_WHITE.h</File>
           <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PWM_RED_WHITE_PM.c</File>
-          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PWM_BLUE.c</File>
-          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PWM_BLUE.h</File>
-          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PWM_BLUE_PM.c</File>
           <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PWM_RED_PIN.c</File>
           <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PWM_RED_PIN.h</File>
           <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PWM_RED_PIN_aliases.h</File>
@@ -189,6 +186,21 @@
           <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PRIME_UART_rx.h</File>
           <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PRIME_UART_rx_aliases.h</File>
           <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PRIME_UART_rx_PM.c</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\ADC.c</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\ADC.h</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\ADC_PM.c</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\ADC_INT.c</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\ADC_IRQ.c</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\ADC_IRQ.h</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\ADC_intClock.c</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\ADC_intClock.h</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PWM_FAN.c</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PWM_FAN.h</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PWM_FAN_aliases.h</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PWM_FAN_PM.c</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PWM_BLUE_FAN.c</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PWM_BLUE_FAN.h</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PWM_BLUE_FAN_PM.c</File>
         </Files>
       </Folder>
       <Folder BuildType="STRICT" Path="C:\Users\pettid\git\grobot\psoc\grobot_workspace\grobot_module_controller.cydsn\Export\ARM_GCC_Generic">

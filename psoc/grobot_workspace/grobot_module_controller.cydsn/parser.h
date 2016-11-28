@@ -1,5 +1,8 @@
 // Simple utility for parsing messages from the message-passing system.
 
+#ifndef MODULE_CONTROLLER_PARSER_H_
+#define MODULE_CONTROLLER_PARSER_H_
+
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -69,3 +72,5 @@ bool parser_parse_byte(struct Message *message, char byte);
 //  A pointer to the value of the field. It will be at most FIELD_LENGTH in 
 //  size.
 const char *parser_read_field(const struct Message *message, uint8_t field);
+
+#endif // MODULE_CONTROLLER_PARSER_H_

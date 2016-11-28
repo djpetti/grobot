@@ -1,9 +1,11 @@
 #include <stdbool.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include <project.h>
 
 #include "messaging.h"
+#include "parser.h"
 #include "sensors.h"
 
 // Process a PING command.
@@ -47,6 +49,27 @@ void _process_set_id(const struct Message *message) {
   messaging_set_controller_id(id);
 }
 
+// Process a SETLED command.
+// Args:
+//  message: The message containing the command. It does nothing if the command
+//           is not a SETLED command.
+void _process_set_led(const struct Message *message) {
+  if (strcmp(message->command, "SETLED")) {
+    // Not a SETLED command.
+    return;
+  }
+  
+  // This command is used to set the target brightnesses of the LEDs in this
+  // module.
+  // Extract the brightnesses, which are in the fields section.
+  uint8_t red_brightness = atoi(parser_read_field(message, 0));
+  uint8_t white_brightness = atoi(parser_read_field(message, 1));
+  uint8_t blue_brightness = atoi(parser_read_field(message, 2));
+  
+  // Set the brightnesses.
+  sensors_set_led_brightness(red_brightness, white_brightness, blue_brightness);
+}
+
 // Processes incoming messages.
 // Args:
 //  message: The incoming message to process.
@@ -54,6 +77,7 @@ void _process_message(struct Message message) {
   // One of these functions will handle it...
   _process_ping(&message);
   _process_set_id(&message);
+  _process_set_led(&message);
 }
 
 int main()
