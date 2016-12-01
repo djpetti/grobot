@@ -63,12 +63,49 @@ void _process_set_led(const struct Message *message) {
   // This command is used to set the target brightnesses of the LEDs in this
   // module.
   // Extract the brightnesses, which are in the fields section.
-  uint8_t red_brightness = atoi(parser_read_field(message, 0));
-  uint8_t white_brightness = atoi(parser_read_field(message, 1));
-  uint8_t blue_brightness = atoi(parser_read_field(message, 2));
+  const uint8_t red_brightness = atoi(parser_read_field(message, 0));
+  const uint8_t white_brightness = atoi(parser_read_field(message, 1));
+  const uint8_t blue_brightness = atoi(parser_read_field(message, 2));
   
   // Set the brightnesses.
   sensors_set_led_brightness(red_brightness, white_brightness, blue_brightness);
+}
+
+// Process a SETPMP command.
+// Args:
+//  message: The message containing the command. It does nothing if the command
+//           is not a SETPMP command.
+void _process_set_pump(const struct Message *message) {
+  if (strcmp(message->command, "SETPMP")) {
+    // Not a SETPMP command.
+    return;
+  }
+  
+  // This command is used to set whether the main pump is running or not.
+  // Extract whether to run the pump.
+  const uint8_t run_pump = atoi(parser_read_field(message, 0));
+  // Set the pump.
+  sensors_set_pump_running(run_pump);
+}
+
+// Processes a FNUTPH command.
+// Args:
+//  message: The message containing the command. It does nothing if the command
+//           is not a FNUTPH command.
+void _process_force_nutr_ph(const struct Message *message) {
+  if (strcmp(message->command, "FNUTPH")) {
+    // Not a FNUTPH command.
+    return;
+  }
+  
+  // This command is used to force the activation or deactivation of the
+  // nutrient and PH pumps.
+  // Extract whether to run the pumps.
+  const uint8_t run_nutr = atoi(parser_read_field(message, 0));
+  const uint8_t run_ph = atoi(parser_read_field(message, 1));
+  
+  // Set the pumps.
+  sensors_force_nutr_ph(run_nutr, run_ph);
 }
 
 // Processes incoming messages.
@@ -89,6 +126,8 @@ void _process_message(struct Message message) {
   _process_ping(&message);
   _process_set_id(&message);
   _process_set_led(&message);
+  _process_set_pump(&message);
+  _process_force_nutr_ph(&message);
 }
 
 int main()

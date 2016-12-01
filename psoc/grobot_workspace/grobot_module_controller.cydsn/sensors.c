@@ -1,6 +1,5 @@
 #include "sensors.h"
 
-#include <stdbool.h>
 #include <stdio.h>
 
 #include <project.h>
@@ -39,6 +38,11 @@ static uint8_t g_blue_target = 255;
 
 // Whether we are in a temperature fault condition.
 static bool g_temp_fault = false;
+// Whether the main pump is running or not.
+static bool g_pump_running = true;
+// Whether the nutrient and PH pumps are running or not.
+static bool g_nutr_running = false;
+static bool g_ph_running = false;
 
 // Send the status of the LED system back to prime.
 // Args:
@@ -50,13 +54,13 @@ void _send_led_status(uint8_t red_temp, uint8_t white_temp, uint8_t blue_temp,
                       uint8_t fan_speed) {
   // Each attribute will be one field in the message.
   char fields[32];
-  snprintf(fields, 32, "%u/%u/%u/%u/%u/%u/%u/%d", red_temp, white_temp,
+  snprintf(fields, 32, "%u/%u/%u/%u/%u/%u/%u/%d\r\n", red_temp, white_temp,
            blue_temp, g_red_pwm, g_white_pwm, g_blue_pwm, fan_speed,
            g_temp_fault);
   
-  //fields[31] = '\0';
-  //PRIME_UART_UartPutString(fields);
-  messaging_send_message(1, "LEDSTS", fields);
+  fields[31] = '\0';
+  PRIME_UART_UartPutString(fields);
+  //messaging_send_message(1, "LEDSTS", fields);
 }
 
 // Controls LED temperature by setting the fan speed.
@@ -157,10 +161,20 @@ void _control_led_temp() {
   _send_led_status(red_temp, white_temp, blue_temp, fan_speed);
 }
 
+void _control_water() {
+  // Turn on the main pump accordingly.
+  PUMP_MOSFET_Write(g_pump_running);
+  
+  // Turn on the nutrient and ph pumps if needed.
+  NUTR_MOSFET_Write(g_nutr_running);
+  PH_MOSFET_Write(g_ph_running);
+}
+
 CY_ISR(sensors_run_iteration) {
   SENSOR_TIMER_ClearInterrupt(SENSOR_TIMER_INTR_MASK_TC);
   
   _control_led_temp();
+  _control_water();
 }
 
 void sensors_init() {
@@ -187,4 +201,13 @@ void sensors_set_led_brightness(uint8_t red, uint8_t white, uint8_t blue) {
   g_red_target = red;
   g_white_target = white;
   g_blue_target = blue;
+}
+
+void sensors_set_pump_running(bool running) {
+  g_pump_running = running;
+}
+
+void sensors_force_nutr_ph(bool nutr_running, bool ph_running) {
+  g_nutr_running = nutr_running;
+  g_ph_running = ph_running;
 }
