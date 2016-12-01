@@ -1,3 +1,6 @@
+#include <stdio.h> // TEMP
+#include <project.h> // TEMP
+
 #include "parser.h"
 
 void parser_message_init(struct Message *message) {
@@ -16,7 +19,9 @@ void parser_message_init(struct Message *message) {
 bool parser_parse_byte(struct Message *message, char byte) {
   // The standard format for a message is for it to start with a <,
   // and for single slashes to indicate the division between fields. Messages
-  // are terminated with a >.
+  //char scratch[10];
+  //snprintf(scratch, 10, "%d/%d/%c", byte, '<', byte);
+  //PRIME_UART_UartPutString(scratch);
   switch (message->parser_state) {
     case READING_START:
       // We're looking for the leading <.

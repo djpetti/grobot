@@ -54,6 +54,9 @@ void _handle_byte_common(struct Message *message_part, uint8_t byte) {
 
 // Handles data being sent from a slave to us.
 void _handle_slave_response() {
+  // Clear all interrupt sources.
+  STACK_I2C_ClearSlaveInterruptSource(0xFFFFFFFF);
+  
   // Read the next byte of data sent to us.
   uint32_t byte = STACK_I2C_I2CMasterReadByte(STACK_I2C_I2C_ACK_DATA);
   if (byte & 0xFF000000) {
@@ -69,6 +72,9 @@ void _handle_slave_response() {
 
 // Handles data being sent from a master to us.
 void _handle_master_response() {
+  // Clear all interrupt sources.
+  STACK_I2C_ClearMasterInterruptSource(0xFFFFFFFF);
+  
   // Read the next bytes of data sent to us.
   uint8_t bytes_to_read = STACK_I2C_I2CSlaveGetWriteBufSize();
   uint8_t i;
@@ -84,8 +90,11 @@ void _handle_master_response() {
 #ifdef IS_BASE_CONTROLLER
 // Handle a response from the UART.
 CY_ISR(_handle_uart_response) {
-  // Clear the interrupt and get the status.
+  // Get the status.
   uint32_t status = PRIME_UART_GetRxInterruptSource();
+  // Clear all interrupts.
+  PRIME_UART_ClearRxInterruptSource(0xFFFFFFFF);
+  
   if ((status & PRIME_UART_INTR_RX_OVERFLOW) ||
       (status & PRIME_UART_INTR_RX_FRAME_ERROR) ||
       (status & PRIME_UART_INTR_RX_PARITY_ERROR)) {
@@ -126,28 +135,6 @@ bool messaging_init(void (*message_handler)(struct Message message)) {
   // We should have a direct UART connection to Prime. Make sure we can talk
   // on that.
   PRIME_UART_Start();
-  
-  // This message should be immediately acknowledged.
-  messaging_send_message(1, "PING", "");
-  
-  // Wait for acknowledgement.
-  const char *kExpected = "<PING/12/ack>";
-  char received[strlen(kExpected) + 1];
-  // Terminating null.
-  received[strlen(kExpected)] = '\0';
-  uint8_t i;
-  for (i = 0; i < strlen(kExpected); ++i) {
-    received[i] = 0;
-    while (!received[i]) {
-      received[i] = PRIME_UART_UartGetChar();
-    }
-  }
-
-  if (strcmp(received, kExpected)) {
-    // We didn't receive the ack value we expected.
-    return false;
-  }
-  
   // Enable the interrupt.
   PRIME_UART_RECV_INT_StartEx(_handle_uart_response);
 #endif

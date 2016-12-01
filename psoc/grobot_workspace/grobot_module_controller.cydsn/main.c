@@ -14,6 +14,7 @@
 //  message: The message containing the command. It does nothing if the command
 //           is not a PING command.
 void _process_ping(const struct Message *message) {
+  PRIME_UART_UartPutString(message->command);
   if (strcmp(message->command, "PING")) {
     // Not a PING command.
     return;
@@ -112,6 +113,7 @@ void _process_force_nutr_ph(const struct Message *message) {
 // Args:
 //  message: The incoming message to process.
 void _process_message(struct Message message) {
+  PRIME_UART_UartPutString(message.command);
 #ifdef IS_BASE_CONTROLLER
   // If we're the base controller, we're in charge of forwarding messages
   // from the I2C bus to prime.
@@ -131,38 +133,14 @@ void _process_message(struct Message message) {
 }
 
 int main()
-{
-    /*PRIME_UART_Start();
-    bool pump_on = false;
-    while (true) {
-      char read = 0;
-      while (!read) {
-        read = PRIME_UART_UartGetChar();
-      }
-      PRIME_UART_UartPutChar(read);
-      
-      pump_on = !pump_on;
-      if (read == 'a') {
-        NUTR_MOSFET_Write(pump_on);
-      }
-      if (read == 'b') {
-        PH_MOSFET_Write(pump_on);
-      }
-      if (read == 'c') {
-        PUMP_MOSFET_Write(pump_on);
-      }
-      STATUS_LED_Write(pump_on);
-    }*/
-  
+{ 
     // Enable global interrupts.
     CyGlobalIntEnable;
   
-    // Initialize messaging, with the callback. Do this at the end, because
-    // it might wait for responses from other nodes.
-    //messaging_init(_process_message);
+    // Initialize messaging, with the callback.
+    messaging_init(_process_message);
   
     // Register sensor interrupt.
-    PRIME_UART_Start();
     sensors_init();
     SENSOR_INT_StartEx(sensors_run_iteration);
     SENSOR_TIMER_Start();

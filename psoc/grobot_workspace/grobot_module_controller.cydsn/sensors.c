@@ -54,13 +54,11 @@ void _send_led_status(uint8_t red_temp, uint8_t white_temp, uint8_t blue_temp,
                       uint8_t fan_speed) {
   // Each attribute will be one field in the message.
   char fields[32];
-  snprintf(fields, 32, "%u/%u/%u/%u/%u/%u/%u/%d\r\n", red_temp, white_temp,
+  snprintf(fields, 32, "%u/%u/%u/%u/%u/%u/%u/%d", red_temp, white_temp,
            blue_temp, g_red_pwm, g_white_pwm, g_blue_pwm, fan_speed,
            g_temp_fault);
   
-  fields[31] = '\0';
-  PRIME_UART_UartPutString(fields);
-  //messaging_send_message(1, "LEDSTS", fields);
+  messaging_send_message(1, "LEDSTS", fields);
 }
 
 // Controls LED temperature by setting the fan speed.
@@ -158,7 +156,7 @@ void _control_led_temp() {
   }
   
   // Send the LED status back to prime.
-  _send_led_status(red_temp, white_temp, blue_temp, fan_speed);
+  //_send_led_status(red_temp, white_temp, blue_temp, fan_speed);
 }
 
 void _control_water() {
