@@ -201,6 +201,41 @@
           <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PWM_BLUE_FAN.c</File>
           <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PWM_BLUE_FAN.h</File>
           <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PWM_BLUE_FAN_PM.c</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\WATER_TEMP.c</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\WATER_TEMP.h</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\WATER_TEMP_aliases.h</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\WATER_TEMP_PM.c</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\WATER_PH.c</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\WATER_PH.h</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\WATER_PH_aliases.h</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\WATER_PH_PM.c</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\WATER_EC.c</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\WATER_EC.h</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\WATER_EC_aliases.h</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\WATER_EC_PM.c</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PHOTORES.c</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PHOTORES.h</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PHOTORES_aliases.h</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PHOTORES_PM.c</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\UART_1.c</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\UART_1.h</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\UART_1_PM.c</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\UART_1_INT.c</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\UART_1_BOOT.c</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\UART_1_IntClock.c</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\UART_1_IntClock.h</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PUMP_MOSFET.c</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PUMP_MOSFET.h</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PUMP_MOSFET_aliases.h</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PUMP_MOSFET_PM.c</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\NUTR_MOSFET.c</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\NUTR_MOSFET.h</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\NUTR_MOSFET_aliases.h</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\NUTR_MOSFET_PM.c</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PH_MOSFET.c</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PH_MOSFET.h</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PH_MOSFET_aliases.h</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\PH_MOSFET_PM.c</File>
         </Files>
       </Folder>
       <Folder BuildType="STRICT" Path="C:\Users\pettid\git\grobot\psoc\grobot_workspace\grobot_module_controller.cydsn\Export\ARM_GCC_Generic">

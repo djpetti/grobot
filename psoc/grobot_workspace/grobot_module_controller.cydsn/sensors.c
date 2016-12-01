@@ -14,7 +14,7 @@ static const uint16_t kBlueLedTempChannel = 2;
 
 // Constants for linear mapping from raw ADC value temperature in C. We will
 // multiply the value by 16 before dividing it by m.
-static const int32_t kLedTempM = -857;
+static const int32_t kLedTempM = -429;
 static const int32_t kLedTempB = 94;
 
 // Constant for linear mapping from temperature to fan speed. Nominally, we
@@ -22,15 +22,20 @@ static const int32_t kLedTempB = 94;
 static const int16_t kFanM = 8;
 static const int16_t kFanB = -305;
 
+// The maximum PWM values for all the LEDs.
+static const uint8_t kRedMaxPwm = 238;
+static const uint8_t kWhiteMaxPwm = 242;
+static const uint8_t kBlueMaxPwm = 242;
+
 // The current PWM signals that we're sending to the LEDs.
 static uint8_t g_red_pwm = 0;
 static uint8_t g_white_pwm = 0;
 static uint8_t g_blue_pwm = 0;
 
 // The target PWMs for each LED.
-static uint8_t g_red_target = 0;
-static uint8_t g_white_target = 0;
-static uint8_t g_blue_target = 0;
+static uint8_t g_red_target = 255;
+static uint8_t g_white_target = 255;
+static uint8_t g_blue_target = 255;
 
 // Whether we are in a temperature fault condition.
 static bool g_temp_fault = false;
@@ -49,6 +54,8 @@ void _send_led_status(uint8_t red_temp, uint8_t white_temp, uint8_t blue_temp,
            blue_temp, g_red_pwm, g_white_pwm, g_blue_pwm, fan_speed,
            g_temp_fault);
   
+  //fields[31] = '\0';
+  //PRIME_UART_UartPutString(fields);
   messaging_send_message(1, "LEDSTS", fields);
 }
 
@@ -60,10 +67,10 @@ void _control_led_temp() {
   const uint16_t blue_temp_raw = ADC_GetResult16(kBlueLedTempChannel);
   
   // Convert to degrees C.
-  const uint8_t red_temp = (int32_t)(red_temp_raw << 4) / kLedTempM + kLedTempB;
-  const uint8_t white_temp = (int32_t)(white_temp_raw << 4) / 
+  const int32_t red_temp = (int32_t)(red_temp_raw << 4) / kLedTempM + kLedTempB;
+  const int32_t white_temp = (int32_t)(white_temp_raw << 4) / 
                               kLedTempM + kLedTempB;
-  const uint8_t blue_temp = (int32_t)(blue_temp_raw << 4) /
+  const int32_t blue_temp = (int32_t)(blue_temp_raw << 4) /
                             kLedTempM + kLedTempB;
   
   // Set the fan speed based on the max.
@@ -118,6 +125,17 @@ void _control_led_temp() {
     g_blue_pwm = g_blue_target; 
   }
   
+  // Bound PWMs to the maximum.
+  if (g_red_pwm > kRedMaxPwm) {
+    g_red_pwm = kRedMaxPwm; 
+  }
+  if (g_white_pwm > kWhiteMaxPwm) {
+    g_white_pwm = kWhiteMaxPwm; 
+  }
+  if (g_blue_pwm > kBlueMaxPwm) {
+    g_blue_pwm = kBlueMaxPwm; 
+  }
+  
   if (g_temp_fault) {
     // We need to perform an emergency shutdown of the LEDs.
     LED_MOSFET_Write(0);
@@ -126,9 +144,12 @@ void _control_led_temp() {
   } else {
     // Otherwise, white the PWMs like normal.
     LED_MOSFET_Write(1);
-    PWM_RED_WHITE_WriteCompare1(g_red_pwm);
-    PWM_RED_WHITE_WriteCompare2(g_white_pwm);
-    PWM_BLUE_FAN_WriteCompare1(g_blue_pwm);
+    // The drivers respond with full current when you send ground. It makes more
+    // sense though for 255 to be full power, so we reverse the PWM compare
+    // values when we set them.
+    PWM_RED_WHITE_WriteCompare1(255 - g_red_pwm);
+    PWM_RED_WHITE_WriteCompare2(255 - g_white_pwm);
+    PWM_BLUE_FAN_WriteCompare1(255 - g_blue_pwm);
     PWM_BLUE_FAN_WriteCompare2(fan_speed);
   }
   
@@ -138,9 +159,15 @@ void _control_led_temp() {
 
 CY_ISR(sensors_run_iteration) {
   SENSOR_TIMER_ClearInterrupt(SENSOR_TIMER_INTR_MASK_TC);
+  
+  _control_led_temp();
 }
 
 void sensors_init() {
+  // Start the ADC.
+  ADC_Start();
+  ADC_StartConvert();
+  
   // Initialize PWM outputs.
   PWM_RED_WHITE_Start();
   PWM_BLUE_FAN_Start();

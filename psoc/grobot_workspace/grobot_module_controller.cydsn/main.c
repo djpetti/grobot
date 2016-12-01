@@ -93,16 +93,40 @@ void _process_message(struct Message message) {
 
 int main()
 {
+    /*PRIME_UART_Start();
+    bool pump_on = false;
+    while (true) {
+      char read = 0;
+      while (!read) {
+        read = PRIME_UART_UartGetChar();
+      }
+      PRIME_UART_UartPutChar(read);
+      
+      pump_on = !pump_on;
+      if (read == 'a') {
+        NUTR_MOSFET_Write(pump_on);
+      }
+      if (read == 'b') {
+        PH_MOSFET_Write(pump_on);
+      }
+      if (read == 'c') {
+        PUMP_MOSFET_Write(pump_on);
+      }
+      STATUS_LED_Write(pump_on);
+    }*/
+  
     // Enable global interrupts.
     CyGlobalIntEnable;
   
-    // Register sensor interrupt.
-    SENSOR_INT_StartEx(sensors_run_iteration);
-    SENSOR_TIMER_Start();
-  
     // Initialize messaging, with the callback. Do this at the end, because
     // it might wait for responses from other nodes.
-    messaging_init(_process_message);
+    //messaging_init(_process_message);
+  
+    // Register sensor interrupt.
+    PRIME_UART_Start();
+    sensors_init();
+    SENSOR_INT_StartEx(sensors_run_iteration);
+    SENSOR_TIMER_Start();
     
     return 0;
 }
