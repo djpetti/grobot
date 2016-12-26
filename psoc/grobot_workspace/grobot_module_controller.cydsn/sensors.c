@@ -20,11 +20,17 @@ static const int32_t kLedTempB = 94;
 // want the fan to turn on at 40C and reach full power by 70C.
 static const int16_t kFanM = 8;
 static const int16_t kFanB = -305;
+// Bounds the maximum change in fan speed that we can make every cycle. This is
+// in order to stop the fan from throttling up and down annoyingly.
+static const int16_t kFanMaxChange = 3;
 
 // The maximum PWM values for all the LEDs.
 static const uint8_t kRedMaxPwm = 238;
 static const uint8_t kWhiteMaxPwm = 242;
 static const uint8_t kBlueMaxPwm = 242;
+
+// How many cycles to leave in between status messages.
+static const uint8_t kStatusPeriod = 10;
 
 // The current PWM signals that we're sending to the LEDs.
 static uint8_t g_red_pwm = 0;
@@ -32,17 +38,23 @@ static uint8_t g_white_pwm = 0;
 static uint8_t g_blue_pwm = 0;
 
 // The target PWMs for each LED.
-static uint8_t g_red_target = 255;
-static uint8_t g_white_target = 255;
-static uint8_t g_blue_target = 255;
+static uint8_t g_red_target = 0;
+static uint8_t g_white_target = 0;
+static uint8_t g_blue_target = 0;
 
 // Whether we are in a temperature fault condition.
 static bool g_temp_fault = false;
 // Whether the main pump is running or not.
-static bool g_pump_running = true;
+static bool g_pump_running = false;
 // Whether the nutrient and PH pumps are running or not.
 static bool g_nutr_running = false;
 static bool g_ph_running = false;
+
+// It will send serial status back to prime only if this is enabled.
+static bool g_serial_status = false;
+
+// The last fan speed we output.
+static int16_t g_fan_speed = 0;
 
 // Send the status of the LED system back to prime.
 // Args:
@@ -52,6 +64,19 @@ static bool g_ph_running = false;
 //  fan_speed: The speed of the fan.
 void _send_led_status(uint8_t red_temp, uint8_t white_temp, uint8_t blue_temp,
                       uint8_t fan_speed) {
+  if (!g_serial_status) {
+    // We're not sending the serial status.
+    return;
+  }
+  
+  // We probably are not going to want to send a status message every single
+  // cycle.
+  static uint8_t status_cycles = 0;
+  if (++status_cycles <= kStatusPeriod) {
+    return;
+  }
+  status_cycles = 0;
+                        
   // Each attribute will be one field in the message.
   char fields[32];
   snprintf(fields, 32, "%u/%u/%u/%u/%u/%u/%u/%d", red_temp, white_temp,
@@ -84,12 +109,21 @@ void _control_led_temp() {
     max_temp = blue_temp; 
   }
   
-  int16_t fan_speed = max_temp * kFanM + kFanB;
+  const int16_t new_fan = max_temp * kFanM + kFanB;
+  // Bound the rate of change.
+  if (new_fan - g_fan_speed > kFanMaxChange) {
+    g_fan_speed += kFanMaxChange;
+  } else if (g_fan_speed - new_fan > kFanMaxChange) {
+    g_fan_speed -= kFanMaxChange; 
+  } else {
+    g_fan_speed = new_fan; 
+  }
+  
   // Bound the fan speed intelligently.
-  if (fan_speed < 0) {
-    fan_speed = 0;
-  } else if (fan_speed > 255) {
-    fan_speed = 255; 
+  if (g_fan_speed < 0) {
+    g_fan_speed = 0;
+  } else if (g_fan_speed > 255) {
+    g_fan_speed = 255; 
   }
   
   // Throttle down LED current if the LEDs are still getting really hot.
@@ -152,11 +186,11 @@ void _control_led_temp() {
     PWM_RED_WHITE_WriteCompare1(255 - g_red_pwm);
     PWM_RED_WHITE_WriteCompare2(255 - g_white_pwm);
     PWM_BLUE_FAN_WriteCompare1(255 - g_blue_pwm);
-    PWM_BLUE_FAN_WriteCompare2(fan_speed);
+    PWM_BLUE_FAN_WriteCompare2(g_fan_speed);
   }
   
   // Send the LED status back to prime.
-  //_send_led_status(red_temp, white_temp, blue_temp, fan_speed);
+  _send_led_status(red_temp, white_temp, blue_temp, g_fan_speed);
 }
 
 void _control_water() {
@@ -191,7 +225,13 @@ void sensors_init() {
   PWM_BLUE_FAN_WriteCompare2(0);
   
   // Power up the drivers.
-  LED_MOSFET_Write(1);
+  LED_MOSFET_Write(g_serial_status);
+  
+  // Turn on the LED until someone enabled serial status. This is because
+  // serial status generally gets enabled when prime is actively connected
+  // to us, so the LED is a good way to quickly debug whether that connection
+  // is working.
+  STATUS_LED_Write(1);
 }
 
 void sensors_set_led_brightness(uint8_t red, uint8_t white, uint8_t blue) {
@@ -208,4 +248,10 @@ void sensors_set_pump_running(bool running) {
 void sensors_force_nutr_ph(bool nutr_running, bool ph_running) {
   g_nutr_running = nutr_running;
   g_ph_running = ph_running;
+}
+
+void set_serial_status_enabled(bool enabled) {
+  // Set the status LED appropriately.
+  STATUS_LED_Write(!enabled);
+  g_serial_status = enabled; 
 }

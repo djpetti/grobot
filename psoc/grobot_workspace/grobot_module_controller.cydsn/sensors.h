@@ -12,6 +12,10 @@ void sensors_init();
 // Runs a single iteration of the sensor reader.
 CY_ISR_PROTO(sensors_run_iteration);
 
+// Enable or disable the sending of serial status back to prime.
+// Args:
+//  enabled: Whether or not serial status is enabled.
+void set_serial_status_enabled(bool enabled);
 // Sets new target brightnesses for the LEDs.
 // Args:
 //  red: Red brightness, from 0-255.

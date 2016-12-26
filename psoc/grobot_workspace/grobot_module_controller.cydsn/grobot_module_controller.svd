@@ -2144,7 +2144,7 @@
       </registers>
     </peripheral>
     <peripheral>
-      <name>UART_1</name>
+      <name>DISPLAY_UART</name>
       <description>UART</description>
       <baseAddress>0x0</baseAddress>
       <addressBlock>
@@ -2154,7 +2154,7 @@
       </addressBlock>
       <registers>
         <register>
-          <name>TX_UART_1_TX_DATA</name>
+          <name>TX_DISPLAY_UART_TX_DATA</name>
           <description>TX Data Register</description>
           <addressOffset>0x400F0043</addressOffset>
           <size>8</size>
@@ -2163,7 +2163,7 @@
           <resetMask>0</resetMask>
         </register>
         <register>
-          <name>TX_UART_1_TX_STATUS</name>
+          <name>TX_DISPLAY_UART_TX_STATUS</name>
           <description>TX status register</description>
           <addressOffset>0x400F0063</addressOffset>
           <size>8</size>
@@ -2172,28 +2172,28 @@
           <resetMask>0</resetMask>
           <fields>
             <field>
-              <name>UART_1_TX_STS_COMPLETE</name>
+              <name>DISPLAY_UART_TX_STS_COMPLETE</name>
               <description>No description available</description>
               <lsb>0</lsb>
               <msb>0</msb>
               <access>read-only</access>
             </field>
             <field>
-              <name>UART_1_TX_STS_FIFO_EMPTY</name>
+              <name>DISPLAY_UART_TX_STS_FIFO_EMPTY</name>
               <description>No description available</description>
               <lsb>1</lsb>
               <msb>1</msb>
               <access>read-only</access>
             </field>
             <field>
-              <name>UART_1_TX_STS_FIFO_FULL</name>
+              <name>DISPLAY_UART_TX_STS_FIFO_FULL</name>
               <description>No description available</description>
               <lsb>2</lsb>
               <msb>2</msb>
               <access>read-only</access>
             </field>
             <field>
-              <name>UART_1_TX_STS_FIFO_NOT_FULL</name>
+              <name>DISPLAY_UART_TX_STS_FIFO_NOT_FULL</name>
               <description>No description available</description>
               <lsb>3</lsb>
               <msb>3</msb>

@@ -5,6 +5,7 @@
 #include <project.h>
 
 #include "config.h"
+#include "display.h"
 #include "messaging.h"
 #include "parser.h"
 #include "sensors.h"
@@ -14,7 +15,6 @@
 //  message: The message containing the command. It does nothing if the command
 //           is not a PING command.
 void _process_ping(const struct Message *message) {
-  PRIME_UART_UartPutString(message->command);
   if (strcmp(message->command, "PING")) {
     // Not a PING command.
     return;
@@ -109,11 +109,29 @@ void _process_force_nutr_ph(const struct Message *message) {
   sensors_force_nutr_ph(run_nutr, run_ph);
 }
 
+// Processes an ENSTAT command.
+// Args:
+//  message: The message containing the command. It does nothing if the command
+//           is not an ENSTAT command.
+void _process_en_status(const struct Message *message) {
+  if (strcmp(message->command, "ENSTAT")) {
+    // Not an ENSTAT command.
+    return;
+  }
+  
+  // This command is used to enable or disable the sending of serial status
+  // messages from the sensors back to prime.
+  // Extract whether or not to send status.
+  const uint8_t send_status = atoi(parser_read_field(message, 0));
+  
+  // Set whether it's enabled.
+  set_serial_status_enabled(send_status);
+}
+
 // Processes incoming messages.
 // Args:
 //  message: The incoming message to process.
 void _process_message(struct Message message) {
-  PRIME_UART_UartPutString(message.command);
 #ifdef IS_BASE_CONTROLLER
   // If we're the base controller, we're in charge of forwarding messages
   // from the I2C bus to prime.
@@ -130,6 +148,7 @@ void _process_message(struct Message message) {
   _process_set_led(&message);
   _process_set_pump(&message);
   _process_force_nutr_ph(&message);
+  _process_en_status(&message);
 }
 
 int main()
@@ -139,6 +158,9 @@ int main()
   
     // Initialize messaging, with the callback.
     messaging_init(_process_message);
+    
+    // Start the display.
+    display_init();
   
     // Register sensor interrupt.
     sensors_init();

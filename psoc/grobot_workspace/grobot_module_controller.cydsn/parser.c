@@ -17,11 +17,14 @@ void parser_message_init(struct Message *message) {
 }
 
 bool parser_parse_byte(struct Message *message, char byte) {
+  // If we get an open-bracket, that means that, no matter where we are,
+  // a message is starting.
+  if (byte == '<' && message->parser_state != READING_START) {
+    parser_message_init(message); 
+  }
+  
   // The standard format for a message is for it to start with a <,
   // and for single slashes to indicate the division between fields. Messages
-  //char scratch[10];
-  //snprintf(scratch, 10, "%d/%d/%c", byte, '<', byte);
-  //PRIME_UART_UartPutString(scratch);
   switch (message->parser_state) {
     case READING_START:
       // We're looking for the leading <.
