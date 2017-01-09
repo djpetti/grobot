@@ -93,3 +93,6 @@ ENV/
 
 # Bower stuff.
 bower_components/
+
+# Service worker is auto-generated.
+service-worker.js

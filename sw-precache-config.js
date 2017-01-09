@@ -9,9 +9,10 @@
  */
 module.exports = {
   staticFileGlobs: [
-    '/index.html',
-    '/manifest.json',
-    '/bower_components/webcomponentsjs/webcomponents-lite.min.js'
+    'index.html',
+    'manifest.json',
+    'images/*',
+    'bower_components/**/*.{html,js,css}'
   ],
   navigateFallback: '/index.html'
 };
