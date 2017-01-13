@@ -195,6 +195,9 @@ class Message:
     return raw
 
 class SerialTalker:
+  # Maximum amount of data that will be put into the serial buffer at once.
+  WRITE_BUFFER_MAX = 1000
+
   def __init__(self, baudrate, device="/dev/ttyS0",
                ioloop=tornado.ioloop.IOLoop.current()):
     """
@@ -204,6 +207,8 @@ class SerialTalker:
       ioloop: Forces the use of a particular IOLoop. """
     # The callback to be used when a new message is read.
     self.__read_callback = None
+    # Buffer of data that is ready to be written.
+    self.__write_buffer = ""
 
     self.__conn = serial.Serial(device, baudrate, timeout=0, write_timeout=0)
     logger.info("Initialized serial connection on %s." % (device))
@@ -212,17 +217,26 @@ class SerialTalker:
     self.__parser = _Parser()
 
     # Setup IOLoop to process serial events.
-    ioloop.add_handler(self.__conn, self.__handle_serial_read_event,
-                       tornado.ioloop.IOLoop.READ)
+    ioloop.add_handler(self.__conn, self.__handle_serial_event,
+                       tornado.ioloop.IOLoop.READ | tornado.ioloop.IOLoop.WRITE)
 
   def __del__(self):
     logger.info("Closing connection.")
     self.__conn.close()
 
-  def __handle_serial_read_event(self, *args):
+  def __handle_serial_event(self, *args):
+    """ Handle a serial event and dispatch it to the right place. """
+    if len(self.__write_buffer):
+      # Room to write.
+      self.__handle_serial_write_event()
+    if self.__conn.in_waiting:
+      # Room to read.
+      self.__handle_serial_read_event()
+
+  def __handle_serial_read_event(self):
     """ Handles read events from the serial connection. """
     # Read as much data as we have available.
-    data = self.__conn.read(self.__conn.inWaiting())
+    data = self.__conn.read(self.__conn.in_waiting)
     self.__parser.parse(data.decode("utf8"))
 
     while self.__parser.has_message():
@@ -230,6 +244,16 @@ class SerialTalker:
         logger.warning("Got serial message but no callback set.")
         return
       self.__read_callback(self.__parser.get_message())
+
+  def __handle_serial_write_event(self):
+    """ Handles writable events from the serial connection, and writes as much
+    data as there is space to. It may write no data. """
+    can_write = self.WRITE_BUFFER_MAX - self.__conn.out_waiting
+    logger.debug("Writing %d bytes." % (can_write))
+
+    # Write as much as we can.
+    self.__conn.write(self.__write_buffer[:can_write].encode("utf8"))
+    self.__write_buffer = self.__write_buffer[can_write:]
 
   def set_message_handler(self, callback):
     """ Sets the callback that will be used whenever a message is received.
@@ -241,12 +265,10 @@ class SerialTalker:
   def write_command(self, *args, **kwargs):
     """ This is really just a convenience method for building a message and
     sending it to the MCU. All arguments are passed transparently to a
-    Message intstance. """
+    Message intstance. It is asyncronous, will return before the data is fully
+    sent. """
     message = Message(*args, **kwargs)
-    self.__write(message.get_raw())
-
-  def __write(self, message):
-    """ Writes a raw message.
-    Args:
-      message: The message to write. """
-    self.__conn.write(message.encode("utf8"))
+    # Add it to the buffer so we can write when ready.
+    self.__write_buffer += message.get_raw()
+    # Try writing whatever we can right now.
+    self.__handle_serial_write_event()
