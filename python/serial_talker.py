@@ -8,6 +8,8 @@ import logging
 
 import serial
 
+import tornado.ioloop
+
 
 logger = logging.getLogger(__name__)
 
@@ -110,11 +112,17 @@ class _Parser:
     for char in data:
       self.__parse_char(char)
 
+  def has_message(self):
+    """
+    Returns:
+      True if we have at least one new message available, False otherwise. """
+    return len(self.__parsed) != 0
+
   def get_message(self):
     """
     Returns:
       The earliest message received, or None if there are no new messages. """
-    if not len(self.__parsed):
+    if not self.has_message():
       # No new messages.
       return None
 
@@ -187,24 +195,48 @@ class Message:
     return raw
 
 class SerialTalker:
-  def __init__(self, baudrate, conn=None):
+  def __init__(self, baudrate, device="/dev/ttyS0",
+               ioloop=tornado.ioloop.IOLoop.current()):
     """
     Args:
       baudrate: The baudrate to use for communication with the MCU.
-      conn: Forces the use of a particular connection object. """
-    self.__conn = conn
-    if not self.__conn:
-      self.__conn = serial.Serial("/dev/ttyS0", baudrate)
-      logger.info("Initialized serial connection with MCU.")
-    else:
-      logger.info("Using user-provided connection object.")
+      device: Forces the use of a particular serial device.
+      ioloop: Forces the use of a particular IOLoop. """
+    # The callback to be used when a new message is read.
+    self.__read_callback = None
+
+    self.__conn = serial.Serial(device, baudrate, timeout=0, write_timeout=0)
+    logger.info("Initialized serial connection on %s." % (device))
 
     # The parser we use to parse received messages.
     self.__parser = _Parser()
 
+    # Setup IOLoop to process serial events.
+    ioloop.add_handler(self.__conn, self.__handle_serial_read_event,
+                       tornado.ioloop.IOLoop.READ)
+
   def __del__(self):
     logger.info("Closing connection.")
     self.__conn.close()
+
+  def __handle_serial_read_event(self, *args):
+    """ Handles read events from the serial connection. """
+    # Read as much data as we have available.
+    data = self.__conn.read(self.__conn.inWaiting())
+    self.__parser.parse(data.decode("utf8"))
+
+    while self.__parser.has_message():
+      if not self.__read_callback:
+        logger.warning("Got serial message but no callback set.")
+        return
+      self.__read_callback(self.__parser.get_message())
+
+  def set_message_handler(self, callback):
+    """ Sets the callback that will be used whenever a message is received.
+    Args:
+      callback: The callback that will be used. It should take an argument for
+      the message. """
+    self.__read_callback = callback
 
   def write_command(self, *args, **kwargs):
     """ This is really just a convenience method for building a message and
@@ -213,23 +245,8 @@ class SerialTalker:
     message = Message(*args, **kwargs)
     self.__write(message.get_raw())
 
-  def read_response(self):
-    """ Reads a command from the serial interface.
-    Returns:
-      The command, read and parsed into a message structure, or None if no new
-      commands are available. """
-    if not self.__conn.inWaiting():
-      # No data to read.
-      return None
-
-    # Read as much data as we have available.
-    data = self.__conn.read(self.__conn.inWaiting())
-    self.__parser.parse(data)
-
-    return self.__parser.get_message()
-
   def __write(self, message):
     """ Writes a raw message.
     Args:
       message: The message to write. """
-    self.__conn.write(message)
+    self.__conn.write(message.encode("utf8"))
