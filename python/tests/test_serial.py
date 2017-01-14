@@ -1,12 +1,13 @@
 import logging
 import os
-
-import serial_talker
+import pty
 import sys
 
 import serial
 
 import tornado.testing
+
+import serial_talker
 
 
 """ Tests serial interface and messaging. """
@@ -21,27 +22,26 @@ class SerialTalkerTest(tornado.testing.AsyncTestCase):
   def setUp(self):
     super().setUp()
 
-    # Check to make sure that virtual TTY is set up.
-    if not os.path.exists("/dev/pts/1"):
-      logger.critical("Cannot find virtual TTY. Please create it like \
-                      `socat -d -d pty,raw,echo=0 pty,raw,echo=0 &`.")
-      sys.exit(1)
+    # Create a vitual TTY for this test.
+    our_end, their_end = pty.openpty()
+    device_name = os.ttyname(their_end)
+    logger.debug("Opened device: %s" % (device_name))
 
     # Create a SerialTalker with a dummy connection.
     self.__serial_talker = serial_talker.SerialTalker(115200,
-                                                      device="/dev/pts/1",
+                                                      device=device_name,
                                                       ioloop=self.io_loop)
     # Other end of the connection.
-    self.__conn = serial.Serial("/dev/pts/2", baudrate=115200, timeout=1)
+    self.__conn = our_end
 
   def tearDown(self):
-    self.__conn.close()
+    os.close(self.__conn)
 
   def __wait_for_serial(self, expected):
     """ Wait to receive from the serial, and compares it with an expected value.
     Args:
       expected: The expected value. """
-    data = self.__conn.read(len(expected))
+    data = os.read(self.__conn, len(expected))
     self.assertEqual(expected, data.decode("utf8"))
 
   def test_simple_message(self):
@@ -73,7 +73,7 @@ class SerialTalkerTest(tornado.testing.AsyncTestCase):
     # Set the handler appropriately.
     self.__serial_talker.set_message_handler(receive_message)
 
-    self.__conn.write("<TEST/12>".encode("utf8"))
+    os.write(self.__conn, "<TEST/12>".encode("utf8"))
 
     self.wait()
 
@@ -96,7 +96,7 @@ class SerialTalkerTest(tornado.testing.AsyncTestCase):
     # Set the handler appropriately.
     self.__serial_talker.set_message_handler(receive_message)
 
-    self.__conn.write("<TEST/12/42/None/hello>".encode("utf8"))
+    os.write(self.__conn, "<TEST/12/42/None/hello>".encode("utf8"))
 
     self.wait()
 
@@ -126,8 +126,8 @@ class SerialTalkerTest(tornado.testing.AsyncTestCase):
     self.__serial_talker.set_message_handler(receive_message)
 
     # Add one message, and a partial one.
-    self.__conn.write("<TEST/12/1><TEST/".encode("utf8"))
+    os.write(self.__conn, "<TEST/12/1><TEST/".encode("utf8"))
     self.wait()
     # Add the rest of the message.
-    self.__conn.write("12/2>".encode("utf8"))
+    os.write(self.__conn, "12/2>".encode("utf8"))
     self.wait()
