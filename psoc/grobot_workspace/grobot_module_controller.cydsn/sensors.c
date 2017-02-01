@@ -11,10 +11,18 @@ static const uint8_t kRedLedTempChannel = 0;
 static const uint8_t kWhiteLedTempChannel = 1;
 static const uint16_t kBlueLedTempChannel = 2;
 
+// Channels to read water data from.
+static const uint16_t kWaterTempChannel = 3;
+
 // Constants for linear mapping from raw ADC value temperature in C. We will
 // multiply the value by 16 before dividing it by m.
 static const int32_t kLedTempM = -429;
 static const int32_t kLedTempB = 94;
+
+// Constants for linear mapping from raw ADC value to water temperature in C.
+// We will multiply the value by 16 before dividing it by m.
+static const int32_t kWaterTempM = -429;
+static const int32_t kWaterTempB = 94;
 
 // Constant for linear mapping from temperature to fan speed. Nominally, we
 // want the fan to turn on at 40C and reach full power by 70C.
@@ -56,7 +64,7 @@ static bool g_serial_status = false;
 // The last fan speed we output.
 static int16_t g_fan_speed = 0;
 
-// Send the status of the LED system back to prime.
+// Send the status of the LED system back to Prime.
 // Args:
 //  red_temp: The temperature of the red LED.
 //  white_temp: The temperature of the white LED.
@@ -84,6 +92,33 @@ void _send_led_status(uint8_t red_temp, uint8_t white_temp, uint8_t blue_temp,
            g_temp_fault);
   
   messaging_send_message(1, "LEDSTS", fields);
+}
+                      
+// Send the status of the water management system back to Prime.
+// Args:
+//  water_temp: The water temperature.
+//  water_ec: The water conductivity.
+//  water_ph: The water PH.
+void _send_water_status(uint8_t water_temp, int8_t water_ec,
+                        uint8_t water_ph) {
+  if (!g_serial_status) {
+    // We're not sending the serial status.
+    return;
+  }
+  
+  // We probably are not going to want to send a status message every single
+  // cycle.
+  static uint8_t status_cycles = 0;
+  if (++status_cycles <= kStatusPeriod) {
+    return;
+  }
+  status_cycles = 0;
+  
+  // Each attribute will be one field in the message.
+  char fields[16];
+  snprintf(fields, 16, "%u/%d/%u", water_temp, water_ec, water_ph);
+  
+  messaging_send_message(1, "WATSTS", fields);
 }
 
 // Controls LED temperature by setting the fan speed.
@@ -193,6 +228,24 @@ void _control_led_temp() {
   _send_led_status(red_temp, white_temp, blue_temp, g_fan_speed);
 }
 
+// Gets the current water temperature and conductivity.
+// Args:
+//  temp: Will be set to the water temperature.
+//  ec: Will be set to the water conductivity.
+void _get_water_temp_ec(int32_t *temp, int32_t *ec) {
+  // TODO (danielp): Implement conductivity as well.
+  *ec = -1;
+  
+  const uint16_t water_temp_raw = ADC_GetResult16(kWaterTempChannel);
+  *temp = (int32_t)(water_temp_raw << 4) / kWaterTempM + kWaterTempB;
+  if (*temp < 20) {
+    // Currently, we can't measure less than about 20 C very accurately, so
+    // if the temperature is below this, we're not going to give a conductivity
+    // reading.
+    *ec = -1;
+  }
+}
+
 void _control_water() {
   // Turn on the main pump accordingly.
   PUMP_MOSFET_Write(g_pump_running);
@@ -200,6 +253,14 @@ void _control_water() {
   // Turn on the nutrient and ph pumps if needed.
   NUTR_MOSFET_Write(g_nutr_running);
   PH_MOSFET_Write(g_ph_running);
+  
+  // Get the current temperature and conductivity.
+  int32_t water_temp, water_ec;
+  _get_water_temp_ec(&water_temp, &water_ec);
+  
+  // Send the water status back to prime.
+  // TODO (danielp): Add water PH.
+  _send_water_status(water_temp, water_ec, 7);
 }
 
 CY_ISR(sensors_run_iteration) {
