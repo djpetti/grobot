@@ -6,9 +6,10 @@
 
 #include "config.h"
 #include "display.h"
+#include "lighting.h"
 #include "messaging.h"
 #include "parser.h"
-#include "sensors.h"
+#include "water.h"
 
 // Process a PING command.
 // Args:
@@ -69,7 +70,8 @@ void _process_set_led(const struct Message *message) {
   const uint8_t blue_brightness = atoi(parser_read_field(message, 2));
   
   // Set the brightnesses.
-  sensors_set_led_brightness(red_brightness, white_brightness, blue_brightness);
+  lighting_set_led_brightness(red_brightness, white_brightness,
+                              blue_brightness);
 }
 
 // Process a SETPMP command.
@@ -86,7 +88,7 @@ void _process_set_pump(const struct Message *message) {
   // Extract whether to run the pump.
   const uint8_t run_pump = atoi(parser_read_field(message, 0));
   // Set the pump.
-  sensors_set_pump_running(run_pump);
+  water_set_pump_running(run_pump);
 }
 
 // Processes a FNUTPH command.
@@ -106,7 +108,7 @@ void _process_force_nutr_ph(const struct Message *message) {
   const uint8_t run_ph = atoi(parser_read_field(message, 1));
   
   // Set the pumps.
-  sensors_force_nutr_ph(run_nutr, run_ph);
+  water_force_nutr_ph(run_nutr, run_ph);
 }
 
 // Processes an ENSTAT command.
@@ -124,8 +126,11 @@ void _process_en_status(const struct Message *message) {
   // Extract whether or not to send status.
   const uint8_t send_status = atoi(parser_read_field(message, 0));
   
+  // Set the status LED appropriately.
+  STATUS_LED_Write(!send_status);
   // Set whether it's enabled.
-  set_serial_status_enabled(send_status);
+  lighting_set_serial_status_enabled(send_status);
+  water_set_serial_status_enabled(send_status);
 }
 
 // Processes incoming messages.
@@ -151,21 +156,40 @@ void _process_message(struct Message message) {
   _process_en_status(&message);
 }
 
+// Updates hardware control loops at a regular interval.
+CY_ISR(update_control_loops) {
+  CONTROL_LOOP_TIMER_ClearInterrupt(CONTROL_LOOP_TIMER_INTR_MASK_TC);
+  
+  lighting_run_iteration();
+  water_run_iteration();
+}
+
 int main()
 { 
     // Enable global interrupts.
     CyGlobalIntEnable;
+  
+    // Start the ADC.
+    ADC_Start();
+    ADC_StartConvert();
   
     // Initialize messaging, with the callback.
     messaging_init(_process_message);
     
     // Start the display.
     display_init();
-  
-    // Register sensor interrupt.
-    sensors_init();
-    SENSOR_INT_StartEx(sensors_run_iteration);
-    SENSOR_TIMER_Start();
+    
+    // Turn on the LED until someone enabled serial status. This is because
+    // serial status generally gets enabled when prime is actively connected
+    // to us, so the LED is a good way to quickly debug whether that connection
+    // is working.
+    STATUS_LED_Write(1);
+    // Initialize control loops.
+    lighting_init();
+    water_init();
+    
+    CONTROL_LOOP_TIMER_Start();
+    CONTROL_LOOP_INT_StartEx(update_control_loops);
     
     return 0;
 }
