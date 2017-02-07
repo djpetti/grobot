@@ -1,4 +1,4 @@
-update=Sun 30 Oct 2016 12:15:41 PM EDT
+update=Tue Feb  7 12:32:56 2017
 version=1
 last_client=kicad
 [pcbnew]
@@ -58,4 +58,4 @@ LibName26=opto
 LibName27=atmel
 LibName28=contrib
 LibName29=valves
-LibName30=/home/daniel/Documents/psoc
+LibName30=custom_lib/psoc
