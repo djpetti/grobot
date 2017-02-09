@@ -5,13 +5,14 @@
     "/src/main-view.html",
     "/src/my-view404.html"
   ],
-  "sourceGlobs": [
+  "sources": [
    "src/**/*",
    "images/**/*",
    "bower.json"
   ],
   "includeDependencies": [
     "manifest.json",
+    "bower_components/*",
     "bower_components/accessibility-developer-tools/*",
     "bower_components/app-layout/*",
     "bower_components/app-layout/**/*",
