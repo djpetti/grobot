@@ -5,9 +5,9 @@ import sys
 
 import serial
 
-import tornado.testing
 
-import serial_talker
+from .. import serial_talker
+from . import base_test
 
 
 """ Tests serial interface and messaging. """
@@ -16,7 +16,7 @@ import serial_talker
 logger = logging.getLogger(__name__)
 
 
-class SerialTalkerTest(tornado.testing.AsyncTestCase):
+class SerialTalkerTest(base_test.BaseTest):
   """ Tests for the SerialTalker class. """
 
   def setUp(self):
@@ -35,6 +35,10 @@ class SerialTalkerTest(tornado.testing.AsyncTestCase):
     self.__conn = our_end
 
   def tearDown(self):
+    super().tearDown()
+
+    # Force it to clean up before the test ends.
+    self.__serial_talker.cleanup()
     os.close(self.__conn)
 
   def __wait_for_serial(self, expected):

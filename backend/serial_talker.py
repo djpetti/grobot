@@ -205,6 +205,8 @@ class SerialTalker:
       baudrate: The baudrate to use for communication with the MCU.
       device: Forces the use of a particular serial device.
       ioloop: Forces the use of a particular IOLoop. """
+    self.__cleaned_up = False
+
     # The callback to be used when a new message is read.
     self.__read_callback = None
     # Buffer of data that is ready to be written.
@@ -221,8 +223,7 @@ class SerialTalker:
                        tornado.ioloop.IOLoop.READ | tornado.ioloop.IOLoop.WRITE)
 
   def __del__(self):
-    logger.info("Closing connection.")
-    self.__conn.close()
+    self.cleanup()
 
   def __handle_serial_event(self, *args):
     """ Handle a serial event and dispatch it to the right place. """
@@ -272,3 +273,13 @@ class SerialTalker:
     self.__write_buffer += message.get_raw()
     # Try writing whatever we can right now.
     self.__handle_serial_write_event()
+
+  def cleanup(self):
+    """ Performs cleanup tasks such as closing the serial connection. """
+    if self.__cleaned_up:
+      return
+
+    logger.info("Closing connection.")
+    self.__conn.close()
+
+    self.__cleaned_up = True
