@@ -12,7 +12,9 @@ module.exports = {
     'index.html',
     'manifest.json',
     'images/*',
-    'bower_components/**/*.{html,js,css}'
+    'bower_components/!(*test*)/*.{js,css,html}',
+    'bower_components/!(*test*)/!(test|demo)/*.{js,css,html}',
+    'bower_components/!(*test*)/!(test|demo)/**/.{js,css,html}'
   ],
   navigateFallback: '/index.html'
 };
