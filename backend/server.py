@@ -35,7 +35,12 @@ _configure_logging()
 logger = logging.getLogger(__name__)
 
 
-def main():
+def main(dev_mode=False):
+  """ Runs the main server event loop.
+  Args:
+    dev_mode: If set to True, it will serve data from the base directory instead
+              of from the build directory. This is useful if we want to debug
+              stuff locally without running 'polymer build.'"""
   # Load the settings initially.
   try:
     settings_file = open("backend_settings.json")
@@ -47,12 +52,14 @@ def main():
   settings_file.close()
   logger.info("Loaded settings.")
 
-  bundled_path = "build/bundled"
-  bower_path = {"path": os.path.join(bundled_path, "bower_components")}
-  image_path = {"path": os.path.join(bundled_path, "images")}
-  template_path = settings.get("template_path", "build/bundled/src")
-  template_path = {"path": template_path}
-  root_path = {"path": os.path.join(bundled_path),
+  base_path = "build/bundled"
+  if dev_mode:
+    base_path = ""
+  bower_path = {"path": os.path.join(base_path, "bower_components")}
+  image_path = {"path": os.path.join(base_path, "images")}
+  template_path = settings.get("template_path", "src")
+  template_path = {"path": os.path.join(base_path, template_path)}
+  root_path = {"path": base_path,
                "default_filename": "index.html"}
 
   # Create and run the application.

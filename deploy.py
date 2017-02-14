@@ -53,12 +53,12 @@ def run_all_tests():
 def main():
   parser = argparse.ArgumentParser( \
       description="Run and test the web application.")
-  parser.add_argument("-n", "--no_rebuild", action="store_true",
-                      help="Don't rebuild polymer app.")
+  parser.add_argument("-p", "--production", action="store_true",
+                      help="Rebuild polymer app and serve from build/bundled.")
   args = parser.parse_args()
 
   # Build the polymer app.
-  if not args.no_rebuild:
+  if args.production:
     print("Building polymer app...")
     build_polymer_app()
 
@@ -69,7 +69,7 @@ def main():
 
   # Run the dev server.
   print("Starting dev server...")
-  server.main()
+  server.main(dev_mode=(not args.production))
 
 
 if __name__ == "__main__":

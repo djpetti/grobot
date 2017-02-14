@@ -1,2 +1,2 @@
 {"listen_port": "8080",
- "template_path": "build/bundled/src/"}
+ "template_path": "src/"}
