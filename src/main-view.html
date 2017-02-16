@@ -1,4 +1,8 @@
+<link rel="import" href="../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+<link rel="import" href="../bower_components/iron-image/iron-image.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
 <link rel="import" href="../bower_components/paper-card/paper-card.html">
+<link rel="import" href="../bower_components/paper-dialog/paper-dialog.html">
 <link rel="import" href="../bower_components/paper-listbox/paper-listbox.html">
 <link rel="import" href="../bower_components/paper-item/paper-item.html">
 <link rel="import" href="../bower_components/paper-item/paper-item-body.html">
@@ -6,7 +10,8 @@
 <link rel="import" href="../bower_components/paper-progress/paper-progress.html">
 <link rel="import" href="../bower_components/paper-styles/typography.html">
 <link rel="import" href="../bower_components/polymer/polymer.html">
-<link rel="import" href="../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+<link rel="import" href="../bower_components/neon-animation/animations/scale-up-animation.html">
+<link rel="import" href="../bower_components/neon-animation/animations/fade-out-animation.html">
 <link rel="import" href="shared-styles.html">
 
 <dom-module id="main-view">
@@ -82,6 +87,11 @@
 
         width: 90%;
         margin-top: 10px;
+      }
+
+      .modal-image {
+        width: 400px;
+        height: 711px;
       }
     </style>
 
@@ -181,11 +191,24 @@
       </paper-card>
     </div>
 
+    <paper-dialog id="errorDialog" entry-animation="scale-up-animation"
+                  exit-animation="fade-out-animation">
+      <iron-image class="modal-image" style="padding: 0px; margin: 0px;"
+       src="/images/grobot-broken.svg"></iron-image>
+      <div class="buttons">
+        <paper-button>Details...</paper-button>
+        <paper-button dialog-confirm autofocus>Accept</paper-button>
+      </div>
+    </paper-dialog>
+
   </template>
 
   <script>
     Polymer({
-      is: 'main-view'
+      is: 'main-view',
+      ready: function() {
+        this.$.errorDialog.open();
+      }
     });
   </script>
 </dom-module>
