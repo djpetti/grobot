@@ -12,6 +12,7 @@
 <link rel="import" href="../bower_components/polymer/polymer.html">
 <link rel="import" href="../bower_components/neon-animation/animations/scale-up-animation.html">
 <link rel="import" href="../bower_components/neon-animation/animations/fade-out-animation.html">
+<link rel="import" href="gb-error-modal.html">
 <link rel="import" href="shared-styles.html">
 
 <dom-module id="main-view">
@@ -87,11 +88,6 @@
 
         width: 90%;
         margin-top: 10px;
-      }
-
-      .modal-image {
-        width: 400px;
-        height: 711px;
       }
     </style>
 
@@ -191,15 +187,7 @@
       </paper-card>
     </div>
 
-    <paper-dialog id="errorDialog" entry-animation="scale-up-animation"
-                  exit-animation="fade-out-animation">
-      <iron-image class="modal-image" style="padding: 0px; margin: 0px;"
-       src="/images/grobot-broken.svg"></iron-image>
-      <div class="buttons">
-        <paper-button>Details...</paper-button>
-        <paper-button dialog-confirm autofocus>Accept</paper-button>
-      </div>
-    </paper-dialog>
+    <gb-error-modal id="errorDialog"></gb-error-modal>
 
   </template>
 
@@ -207,7 +195,7 @@
     Polymer({
       is: 'main-view',
       ready: function() {
-        this.$.errorDialog.open();
+        this.$.errorDialog.opened = true;
       }
     });
   </script>
