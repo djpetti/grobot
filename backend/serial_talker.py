@@ -208,7 +208,7 @@ class SerialTalker:
     self.__cleaned_up = False
 
     # The callback to be used when a new message is read.
-    self.__read_callback = None
+    self.__read_callbacks = set()
     # Buffer of data that is ready to be written.
     self.__write_buffer = ""
 
@@ -241,10 +241,14 @@ class SerialTalker:
     self.__parser.parse(data.decode("utf8"))
 
     while self.__parser.has_message():
-      if not self.__read_callback:
-        logger.warning("Got serial message but no callback set.")
+      if not self.__read_callbacks:
+        logger.warning("Got serial message but no callbacks set.")
         return
-      self.__read_callback(self.__parser.get_message())
+
+      message = self.__parser.get_message()
+      for callback in self.__read_callbacks:
+        # Run all the callbacks.
+        callback(message)
 
   def __handle_serial_write_event(self):
     """ Handles writable events from the serial connection, and writes as much
@@ -256,12 +260,23 @@ class SerialTalker:
     self.__conn.write(self.__write_buffer[:can_write].encode("utf8"))
     self.__write_buffer = self.__write_buffer[can_write:]
 
-  def set_message_handler(self, callback):
-    """ Sets the callback that will be used whenever a message is received.
+  def add_message_handler(self, callback):
+    """ Adds a callback that will be called whenever a message is received.
     Args:
       callback: The callback that will be used. It should take an argument for
       the message. """
-    self.__read_callback = callback
+    logger.debug("Adding callback %s." % (str(callback)))
+    self.__read_callbacks.add(callback)
+
+  def remove_message_handler(self, callback):
+    """ Removes a callback that was previously added.
+    Args:
+      callback: The callback that will be removed. """
+    if callback not in self.__read_callbacks:
+      raise KeyError("That callback was never added.")
+
+    logger.debug("Removing callback %s." % (str(callback)))
+    self.__read_callbacks.remove(callback)
 
   def write_command(self, *args, **kwargs):
     """ This is really just a convenience method for building a message and
