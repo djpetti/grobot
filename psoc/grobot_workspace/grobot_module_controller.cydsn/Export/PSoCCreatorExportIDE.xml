@@ -39,14 +39,18 @@
           <File BuildType="BUILD" Toolchain="">.\main.c</File>
           <File BuildType="BUILD" Toolchain="">.\messaging.c</File>
           <File BuildType="BUILD" Toolchain="">.\parser.c</File>
-          <File BuildType="BUILD" Toolchain="">.\sensors.c</File>
+          <File BuildType="BUILD" Toolchain="">.\lighting.c</File>
           <File BuildType="BUILD" Toolchain="">.\display.c</File>
+          <File BuildType="BUILD" Toolchain="">.\water.c</File>
+          <File BuildType="BUILD" Toolchain="">.\utils.c</File>
           <File BuildType="BUILD" Toolchain="">.\cyapicallbacks.h</File>
           <File BuildType="BUILD" Toolchain="">.\config.h</File>
           <File BuildType="BUILD" Toolchain="">.\messaging.h</File>
           <File BuildType="BUILD" Toolchain="">.\parser.h</File>
-          <File BuildType="BUILD" Toolchain="">.\sensors.h</File>
+          <File BuildType="BUILD" Toolchain="">.\lighting.h</File>
           <File BuildType="BUILD" Toolchain="">.\display.h</File>
+          <File BuildType="BUILD" Toolchain="">.\water.h</File>
+          <File BuildType="BUILD" Toolchain="">.\utils.h</File>
         </Files>
       </Folder>
       <Folder BuildType="STRICT" Path="C:\Users\pettid\git\grobot\psoc\grobot_workspace\grobot_module_controller.cydsn\Generated_Source\PSoC4">
@@ -142,11 +146,6 @@
           <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\BOOTLOABABLE.h</File>
           <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\SENSOR_CLOCK.c</File>
           <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\SENSOR_CLOCK.h</File>
-          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\SENSOR_INT.c</File>
-          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\SENSOR_INT.h</File>
-          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\SENSOR_TIMER.c</File>
-          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\SENSOR_TIMER.h</File>
-          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\SENSOR_TIMER_PM.c</File>
           <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\RED_LED_TEMP.c</File>
           <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\RED_LED_TEMP.h</File>
           <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\RED_LED_TEMP_aliases.h</File>
@@ -238,6 +237,17 @@
           <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\DISPLAY_UART_BOOT.c</File>
           <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\DISPLAY_UART_IntClock.c</File>
           <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\DISPLAY_UART_IntClock.h</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\WATER_EC_PWR.c</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\WATER_EC_PWR.h</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\WATER_EC_PWR_aliases.h</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\WATER_EC_PWR_PM.c</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\CONTROL_LOOP_INT.c</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\CONTROL_LOOP_INT.h</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\CONTROL_LOOP_TIMER.c</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\CONTROL_LOOP_TIMER.h</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\CONTROL_LOOP_TIMER_PM.c</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\ADC_EOC_INT.c</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\ADC_EOC_INT.h</File>
         </Files>
       </Folder>
       <Folder BuildType="STRICT" Path="C:\Users\pettid\git\grobot\psoc\grobot_workspace\grobot_module_controller.cydsn\Export\ARM_GCC_Generic">
