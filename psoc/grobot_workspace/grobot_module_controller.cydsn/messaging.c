@@ -6,6 +6,7 @@
 #include <project.h>
 
 #include "config.h"
+#include "dht11.h"
 
 // Size of the slave receiving data buffer.
 #define RECV_BUFFER_SIZE 64

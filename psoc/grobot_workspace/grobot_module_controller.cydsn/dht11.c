@@ -12,6 +12,8 @@
 
 #include <project.h>
 
+#include "dht11.h"
+
 void delay(void);
 void unpackdhtdata(void);
 
@@ -43,7 +45,6 @@ What dhtmain does:
 
 Paramers: None
 Returns: None
-
 */
 
 void dhtmain(){
@@ -73,7 +74,9 @@ void dhtmain(){
     // Enable Global Interrupts
     CyGlobalIntEnable;
     
-    //This is going to run forever, gonna need to put this somewhere else.
+    //This is going to run until decode dht data is called
+    //After this is done, the loop will end, and the data will
+    //be in the respective variables
     
     for(x=0;x<1;)
     {
@@ -237,7 +240,7 @@ CY_ISR(Delay_Timer_ISR_Handler)
 {
     if(Delay_Timer_ReadPeriod() == DELAY_ACQUISITION)
     {
-        cnt=2;                  
+        count=2;                  
         executed=0;             
     }
     else if(Delay_Timer_ReadPeriod() == DELAY_PROCESSING)

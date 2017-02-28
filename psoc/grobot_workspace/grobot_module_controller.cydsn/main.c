@@ -10,6 +10,7 @@
 #include "messaging.h"
 #include "parser.h"
 #include "water.h"
+#include "dht11.h"
 
 // Process a PING command.
 // Args:

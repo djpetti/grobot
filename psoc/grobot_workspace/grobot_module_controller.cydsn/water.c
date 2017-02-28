@@ -7,6 +7,7 @@
 
 #include "messaging.h"
 #include "utils.h"
+#include "dht11.h"
 
 // Channels to read water data from.
 static const uint8_t kWaterTempChannel = 3;

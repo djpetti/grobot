@@ -1,10 +1,12 @@
-#include "lighting.h"
-
 #include <stdio.h>
 
 #include <project.h>
 
+#include "dht11.h"
+
 #include "messaging.h"
+
+#include "lighting.h"
 
 // Channels to read LED temp data from.
 static const uint8_t kRedLedTempChannel = 0;
