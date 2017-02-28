@@ -17,6 +17,9 @@ void unpackdhtdata(void);
 
 uint8 check = 0;
 uint8 decodeFlag=0;
+uint8 Decoded_Temperature_Data = -255;
+uint8 Decoded_Humidity_Data = -255;
+
 int temperature_values[8], humidity_values[8];
 
 int DiffCountValues[44]={0};
@@ -29,7 +32,9 @@ int executed;
 int count;
 int RisingEdge_Counts=0;
 
-int i,j,k;
+int i,j,k,x;
+
+
 /*
 What dhtmain does:
     Starts the dht components
@@ -43,60 +48,42 @@ Returns: None
 
 void dhtmain(){
     //Starts the data timer and delay timer components
-    
     Data_Timer_Start();
-    
     Delay_Timer_Start();
     
-    
     //Write Controlregdatatimer and controlregdealytimer value to 1 to keep them reset
-    
     Control_Reg_Data_Timer_Write(1);
-    
     Control_Reg_Delay_Timer_Write(1);
     
     //The pin value will be written as 1 as the starting condition
-    
     DHT_Pin_Write(1);
     
     //Initilize dhtpinisr and delaytimeriser
-    
     DHT_Pin_ISR_StartEx(DHT_Pin_ISR_Handler);
-    
     Delay_Timer_ISR_StartEx(Delay_Timer_ISR_Handler);
     
     //Disable the ISR compondents
-    
     DHT_Pin_ISR_Disable();
-    
     Delay_Timer_ISR_Disable();
     
-    //Initilize count to zero and executed to 1
-    
+    //Initilize count to 0 and executed to 1
     count = 0;
     executed = 1;
     
     // Enable Global Interrupts
-    
     CyGlobalIntEnable;
     
     //This is going to run forever, gonna need to put this somewhere else.
-    //Probably in the main.c, but thatis for later 
-    //But this will read in the input from the dht11
     
-    for(;;)
+    for(x=0;x<1;)
     {
         
         if(executed == 1 && count == 0)
         {
             executed = 0;
-            
             RisingEdge_Counts = 0;
-            
             CyDelayUs(50);
-            
             DHT_Pin_Write(0);
-            
             Delay_Timer_WritePeriod(DELAY_ACQUISITION);
             //Call the delay function to stay the DHT_Pin as low for 20ms 
             delay_funct();
@@ -127,13 +114,54 @@ void dhtmain(){
             Decode_DHT_Data();
             executed=1;
             count=0;
+            x=1;
         }    
         
-        
-    }    
+    }   
+    
+    //When exited we will have the data in the two "decoded" variables
     
 }    
 
+/*
+What Return_Decoded_Temperature does:
+    -Returns the data in Decoded_Temperature_Data
+ 
+Parameters: None
+Returns: uint8 Decoded_Temperature_Data
+*/
+
+uint8 Return_Decoded_Temperature()
+{
+    if(Decoded_Temperature_Data == -255)
+    {
+        return -1;
+    }
+    else
+    {
+        return Decoded_Temperature_Data; 
+    }    
+}    
+
+/*
+What Return_Decoded_Humidity does:
+    -Returns the data in Decoded_Humidity_Data
+ 
+Parameters: None
+Returns: uint8 Decoded_Humidity_Data
+*/
+
+uint8 Return_Decoded_Temperature()
+{
+    if(Decoded_Humidity_Data == -255)
+    {
+        return -1;
+    }
+    else
+    {
+        return Decoded_Humidity_Data; 
+    }    
+}   
 
 /*
 What delay_funct does:
@@ -192,6 +220,9 @@ void Decode_DHT_Data(void)
     }
     Decoded_Temperature_Data= (uint8)((Temperature_Values[7]<<7) + (Temperature_Values[6]<<6) + (Temperature_Values[5]<<5) + (Temperature_Values[4]<<4) + (Temperature_Values[3] <<3) + (Temperature_Values[2] <<2) + (Temperature_Values[1]<<1) + Temperature_Values[0]);
     Decoded_Humidity_Data=(uint8)((Humidity_Values[7]<<7) + (Humidity_Values[6]<<6) + (Humidity_Values[5]<<5) + (Humidity_Values[4]<<4) + (Humidity_Values[3] <<3) + (Humidity_Values[2] <<2) + (Humidity_Values[1]<<1) + Humidity_Values[0]);
+
+    //From here we will have the acctual values. We can call functions from
+    //here or send it out depending on what we decide to go with 
 }    
 
 /*
