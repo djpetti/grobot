@@ -88,5 +88,6 @@ ENV/
 # Rope project settings
 .ropeproject
 
-# KiCad backup files.
+# KiCad files.
 *.bak
+*-cache.lib
