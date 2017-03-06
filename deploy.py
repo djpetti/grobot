@@ -55,6 +55,8 @@ def main():
       description="Run and test the web application.")
   parser.add_argument("-p", "--production", action="store_true",
                       help="Rebuild polymer app and serve from build/bundled.")
+  parser.add_argument("-t", "--test-only", action="store_true",
+                      help="Only run the tests and nothing else.")
   args = parser.parse_args()
 
   # Build the polymer app.
@@ -68,8 +70,9 @@ def main():
     sys.exit(1)
 
   # Run the dev server.
-  print("Starting dev server...")
-  server.main(dev_mode=(not args.production))
+  if not args.test_only:
+    print("Starting dev server...")
+    server.main(dev_mode=(not args.production))
 
 
 if __name__ == "__main__":
