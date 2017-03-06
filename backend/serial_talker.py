@@ -10,6 +10,8 @@ import serial
 
 import tornado.ioloop
 
+from . import state
+
 
 logger = logging.getLogger(__name__)
 
@@ -212,8 +214,18 @@ class SerialTalker:
     # Buffer of data that is ready to be written.
     self.__write_buffer = ""
 
-    self.__conn = serial.Serial(device, baudrate, timeout=0, write_timeout=0)
-    logger.info("Initialized serial connection on %s." % (device))
+    self.__conn = None
+    try:
+      self.__conn = serial.Serial(device, baudrate, timeout=0, write_timeout=0)
+    except serial.SerialException:
+      logger.critical("Failed to initialize serial subsystem!")
+      # Set that the MCU is not available.
+      state.get_state().set("mcu_alive", False)
+
+      raise ValueError("Serial Init Failed: Bad serial port?")
+
+    logger.info("Initialized serial connection on %s at %d bps." % (device,
+                                                                    baudrate))
 
     # The parser we use to parse received messages.
     self.__parser = _Parser()
@@ -225,13 +237,13 @@ class SerialTalker:
   def __del__(self):
     self.cleanup()
 
-  def __handle_serial_event(self, *args):
+  def __handle_serial_event(self, fd, events):
     """ Handle a serial event and dispatch it to the right place. """
     if len(self.__write_buffer):
       # Room to write.
       self.__handle_serial_write_event()
     if self.__conn.in_waiting:
-      # Room to read.
+      # Room to read,
       self.__handle_serial_read_event()
 
   def __handle_serial_read_event(self):
@@ -294,7 +306,8 @@ class SerialTalker:
     if self.__cleaned_up:
       return
 
-    logger.info("Closing connection.")
-    self.__conn.close()
+    if self.__conn:
+      logger.info("Closing connection.")
+      self.__conn.close()
 
     self.__cleaned_up = True

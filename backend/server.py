@@ -9,6 +9,9 @@ import sys
 import tornado.ioloop
 import tornado.web
 
+from . import cron
+from . import serial_talker
+
 
 """ Runs a tornado web server. This is the main backend for the GroBot system.
 """
@@ -81,6 +84,22 @@ def main(dev_mode=False):
   port = int(port)
   logger.info("Listening on port %d." % (port))
   app.listen(port)
+
+  # Initialize serial subsystem.
+  device = settings.get("mcu_serial", "/dev/ttyS0")
+  baudrate = settings.get("mcu_baudrate", 19200)
+  serial = None
+  try:
+    serial = serial_talker.SerialTalker(baudrate, device=device)
+  except ValueError:
+    # Serial initialization failed. (Already logged.) We're going to keep
+    # running the server to the best of our ability so that we can at least
+    # notify the user.
+    pass
+
+  # Start periodic jobs.
+  if serial:
+    cron.CheckMcuAliveJob(10000, serial)
 
   logger.info("Starting server...")
   tornado.ioloop.IOLoop.current().start()
