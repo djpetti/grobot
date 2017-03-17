@@ -11,6 +11,7 @@ import tornado.web
 
 from . import cron
 from . import serial_talker
+from . import websocket
 
 
 """ Runs a tornado web server. This is the main backend for the GroBot system.
@@ -38,23 +39,14 @@ _configure_logging()
 logger = logging.getLogger(__name__)
 
 
-def main(dev_mode=False):
-  """ Runs the main server event loop.
+def make_app(settings, dev_mode=False):
+  """ Creates the tornado application.
   Args:
-    dev_mode: If set to True, it will serve data from the base directory instead
-              of from the build directory. This is useful if we want to debug
-              stuff locally without running 'polymer build.'"""
-  # Load the settings initially.
-  try:
-    settings_file = open("backend_settings.json")
-  except OSError:
-    logger.critical("Cannot find 'backend_settings.json'. Aborting.")
-    sys.exit(1)
-
-  settings = json.load(settings_file)
-  settings_file.close()
-  logger.info("Loaded settings.")
-
+    settings: The settings loaded from the settings file.
+    dev_mode: If set to True, will serve data from the base directory instead of
+              the build directory. This is useful for testing.
+  Returns:
+    The built and configured app. """
   base_path = "build/bundled"
   if dev_mode:
     base_path = ""
@@ -74,18 +66,18 @@ def main(dev_mode=False):
       (r"/src/(.*)", tornado.web.StaticFileHandler, template_path),
       (r"/(service-worker\.js)", tornado.web.StaticFileHandler, root_path),
       (r"/(manifest\.json)", tornado.web.StaticFileHandler, root_path),
+      (r"/(app_socket)", websocket.GrobotWebSocket),
       (r"/(.*)", tornado.web.StaticFileHandler, root_path)],
       **settings)
 
-  port = settings.get("listen_port")
-  if not port:
-    logger.critical("Expected 'port' in settings.")
-    sys.exit(1)
-  port = int(port)
-  logger.info("Listening on port %d." % (port))
-  app.listen(port)
+  return app
 
-  # Initialize serial subsystem.
+def make_serial(settings):
+  """ Initializes the serial subsystem.
+  Args:
+    settings: The settings loaded from the settings file.
+  Returns:
+    The configured SerialTalker. """
   device = settings.get("mcu_serial", "/dev/ttyS0")
   baudrate = settings.get("mcu_baudrate", 19200)
   serial = None
@@ -96,6 +88,39 @@ def main(dev_mode=False):
     # running the server to the best of our ability so that we can at least
     # notify the user.
     pass
+
+  return serial
+
+
+def main(dev_mode=False):
+  """ Runs the main server event loop.
+  Args:
+    dev_mode: If set to True, it will serve data from the base directory instead
+              of from the build directory. This is useful if we want to debug
+              stuff locally without running 'polymer build.'"""
+  # Load the settings initially.
+  try:
+    settings_file = open("backend_settings.json")
+  except OSError:
+    logger.critical("Cannot find 'backend_settings.json'. Aborting.")
+    sys.exit(1)
+
+  settings = json.load(settings_file)
+  settings_file.close()
+  logger.info("Loaded settings.")
+
+  app = make_app(settings, dev_mode=dev_mode)
+  # Initialize serial subsystem.
+  serial = make_serial(settings)
+
+  # Start listening.
+  port = settings.get("listen_port")
+  if not port:
+    logger.critical("Expected 'port' in settings.")
+    sys.exit(1)
+  port = int(port)
+  logger.info("Listening on port %d." % (port))
+  app.listen(port)
 
   # Start periodic jobs.
   if serial:
