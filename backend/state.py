@@ -18,7 +18,7 @@ class State:
 
   def __send_message(self):
     """ Sends a broadcast message when the state changes. """
-    message = {"state": self.__state}
+    message = {"type": "state", "state": self.__state}
     websocket.GrobotWebSocket.broadcast_message(message)
 
   def set(self, key, value):
