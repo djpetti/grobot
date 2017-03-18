@@ -1,3 +1,4 @@
+import json
 import logging
 
 from .. import state
@@ -32,3 +33,25 @@ class StateTest(base_test.BaseTest):
 
     my_state.set("test_key", 1)
     self.assertEqual(1, my_state.get("test_key"))
+
+class StateTestWithWebsocket(base_test.BaseWebSocketTest):
+  """ Tests for the state class that integrate with websockets. """
+
+  def test_mcu_events(self):
+    """ Tests that MCU events trigger the appropriate messages. """
+    def receive_message(message):
+      """ Used as a callback to read messages from the websocket.
+      Args:
+        message: The message that was received. """
+      # None means the connection was closed.
+      message = json.loads(message)
+      self.assertEqual({"type": "state", "state": {"mcu_alive": False}},
+                       message)
+      self.stop()
+
+    def on_connect(*args):
+      """ Sends a message after the socket is connected. """
+      # Setting the mcu_alive state attribute should trigger a message.
+      state.get_state().set("mcu_alive", False)
+
+    self._connect_and_run(on_connect, receive_message)
