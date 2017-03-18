@@ -90,4 +90,6 @@ ENV/
 
 # KiCad files.
 *.bak
+*.bck
+*.dcm
 *-cache.lib
