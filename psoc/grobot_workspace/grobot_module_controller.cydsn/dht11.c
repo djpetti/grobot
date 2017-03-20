@@ -1,53 +1,39 @@
-/* ========================================
- *
- * Copyright YOUR COMPANY, THE YEAR
- * All Rights Reserved
- * UNPUBLISHED, LICENSED SOFTWARE.
- *
- * CONFIDENTIAL AND PROPRIETARY INFORMATION
- * WHICH IS THE PROPERTY OF your company.
- *
- * ========================================
-*/
-
 #include <project.h>
 
 #include "dht11.h"
 
 void delay(void);
-void unpackdhtdata(void);
+void unpack_dht_data(void);
 
-uint8 check = 0;
-uint8 decodeFlag=0;
-uint8 Decoded_Temperature_Data = -255;
-uint8 Decoded_Humidity_Data = -255;
+uint8_t check = 0;
+uint8_t decode_flag=0;
+uint8_t decoded_temperature_data;
+uint8_t decoded_humidity_data;
 
 int temperature_values[8], humidity_values[8];
-
-int DiffCountValues[44]={0};
-int CountValues_DataTimer[44]={0};
-
-CY_ISR_PROTO(Delay_Timer_ISR_Handler);
-CY_ISR_PROTO(DHT_Pin_ISR_Handler);
-
+int diff_count_values[44]={0};
+int countvalues_datatimer[44]={0};
 int executed;
 int count;
-int RisingEdge_Counts=0;
+int risingedge_counts=0;
 
-int i,j,k,x;
+_CY_ISR_PROTO(Delay_Timer_ISR_Handler);
+_CY_ISR_PROTO(DHT_Pin_ISR_Handler);
 
 
-/*
-What dhtmain does:
-    Starts the dht components
-    Get output from dht11
-    Send out results
+//What dhtmain does:
+//    Starts the dht components
+//    Get output from dht11
+//    Send out results
+//
+//Paramers: None
+//Returns: None
 
-Paramers: None
-Returns: None
-*/
 
 void dhtmain(){
+    decoded_temperature_data = -255;
+    decoded_humidity_data = -255;
+    
     //Starts the data timer and delay timer components
     Data_Timer_Start();
     Delay_Timer_Start();
@@ -77,14 +63,14 @@ void dhtmain(){
     //This is going to run until decode dht data is called
     //After this is done, the loop will end, and the data will
     //be in the respective variables
-    
+    int x;
     for(x=0;x<1;)
     {
         
         if(executed == 1 && count == 0)
         {
             executed = 0;
-            RisingEdge_Counts = 0;
+            risingedge_counts = 0;
             CyDelayUs(50);
             DHT_Pin_Write(0);
             Delay_Timer_WritePeriod(DELAY_ACQUISITION);
@@ -108,12 +94,12 @@ void dhtmain(){
             cnt=0;
         }
         
-        if(decodeFlag==1)
+        if(decode_flag==1)
         {
             Control_Reg_Data_Timer_Write(1);
             DHT_Pin_ISR_Disable(); 
             DHT_Pin_Write(1);   
-            decodeFlag=0;
+            decode_flag=0;
             Decode_DHT_Data();
             executed=1;
             count=0;
@@ -126,55 +112,52 @@ void dhtmain(){
     
 }    
 
-/*
-What Return_Decoded_Temperature does:
-    -Returns the data in Decoded_Temperature_Data
- 
-Parameters: None
-Returns: uint8 Decoded_Temperature_Data
-*/
 
-uint8 Return_Decoded_Temperature()
+//What Return_Decoded_Temperature does:
+//    -Returns the data in decoded_temperature_data
+// 
+//Parameters: None
+//Returns: uint8_t decoded_temperature_data
+
+uint8_t Return_Decoded_Temperature()
 {
-    if(Decoded_Temperature_Data == -255)
+    if(decoded_temperature_data == -255)
     {
         return -1;
     }
     else
     {
-        return Decoded_Temperature_Data; 
+        return decoded_temperature_data; 
     }    
 }    
 
-/*
-What Return_Decoded_Humidity does:
-    -Returns the data in Decoded_Humidity_Data
- 
-Parameters: None
-Returns: uint8 Decoded_Humidity_Data
-*/
+//What Return_Decoded_Humidity does:
+//    -Returns the data in decoded_humidity_data
+// 
+//Parameters: None
+//Returns: uint8_t decoded_humidity_data
 
-uint8 Return_Decoded_Temperature()
+uint8_t Return_Decoded_Temperature()
 {
-    if(Decoded_Humidity_Data == -255)
+    if(decoded_humidity_data == -255)
     {
         return -1;
     }
     else
     {
-        return Decoded_Humidity_Data; 
+        return decoded_humidity_data;
     }    
 }   
 
-/*
-What delay_funct does:
-    - Enable Delay_Timer_ISR to detect Delay_Tiemr Terminal Count interrupt
-    - Start the Delay_Timer component.
-    - This function does not use the CPU delay API, CyDelay(), but uses Delay_Timer to generate delay. 
 
-Parameters: None
-Return: None
-*/
+//What delay_funct does:
+//    - Enable Delay_Timer_ISR to detect Delay_Tiemr Terminal Count interrupt
+//    - Start the Delay_Timer component.
+//    - This function does not use the CPU delay API, CyDelay(), but uses Delay_Timer to generate delay. 
+//
+//Parameters: None
+//Return: None
+
 void delay_funct(void)
 {
     count = 1;
@@ -185,26 +168,27 @@ void delay_funct(void)
     Control_Reg_Delay_Timer_Write(0);
 }    
 
-/*
-What decode dht data does:
-    - The value stored in CountValues_DataTimer[] array, is used to decode the data of DHT output
-    - The time difference between CountValues_DataTimer[i] and CountValues_DataTimer[i-1] is calculated
-    - If the CountValues_DataTimer[i] is approximately 70 counts, it is data 0, and if CountValues_DataTimer[i] is approximately 120, it is data 1. 
 
-Parameters: None
-Returns: None
-
-*/
+//What decode dht data does:
+//    - The value stored in countvalues_datatimer[] array, is used to decode the data of DHT output
+//    - The time difference between countvalues_datatimer[i] and countvalues_datatimer[i-1] is calculated
+//    - If the countvalues_datatimer[i] is approximately 70 counts, it is data 0, and if countvalues_datatimer[i] is approximately 120, it is data 1. 
+//
+//Parameters: None
+//Returns: None
 
 void Decode_DHT_Data(void)
 {
+    int i;
     for(i=0; i<44; i++)
     {
-        DiffCountValues[i]=CountValues_DataTimer[i-1]-CountValues_DataTimer[i];
-    }    
+        diff_count_values[i]=countvalues_datatimer[i-1]-countvalues_datatimer[i];
+    }
+    
+    int j;
     for(j=0; j<8; j++)
     {
-        if(DiffCountValues[j+3]>100)
+        if(diff_count_values[j+3]>100)
         {
             Humidity_Values[7-j]=1;
         }
@@ -212,7 +196,7 @@ void Decode_DHT_Data(void)
         {
             Humidity_Values[7-j]=0;
         }
-        if(DiffCountValues[j+19]>100)
+        if(diff_count_values[j+19]>100)
         {
             Temperature_Values[7-j]=1;
         }
@@ -221,22 +205,20 @@ void Decode_DHT_Data(void)
             Temperature_Values[7-j]=0;
         }
     }
-    Decoded_Temperature_Data= (uint8)((Temperature_Values[7]<<7) + (Temperature_Values[6]<<6) + (Temperature_Values[5]<<5) + (Temperature_Values[4]<<4) + (Temperature_Values[3] <<3) + (Temperature_Values[2] <<2) + (Temperature_Values[1]<<1) + Temperature_Values[0]);
-    Decoded_Humidity_Data=(uint8)((Humidity_Values[7]<<7) + (Humidity_Values[6]<<6) + (Humidity_Values[5]<<5) + (Humidity_Values[4]<<4) + (Humidity_Values[3] <<3) + (Humidity_Values[2] <<2) + (Humidity_Values[1]<<1) + Humidity_Values[0]);
+    decoded_temperature_data = (uint8_t)((Temperature_Values[7]<<7) + (Temperature_Values[6]<<6) + (Temperature_Values[5]<<5) + (Temperature_Values[4]<<4) + (Temperature_Values[3] <<3) + (Temperature_Values[2] <<2) + (Temperature_Values[1]<<1) + Temperature_Values[0]);
+    decoded_humidity_data=(uint8_t)((Humidity_Values[7]<<7) + (Humidity_Values[6]<<6) + (Humidity_Values[5]<<5) + (Humidity_Values[4]<<4) + (Humidity_Values[3] <<3) + (Humidity_Values[2] <<2) + (Humidity_Values[1]<<1) + Humidity_Values[0]);
 
     //From here we will have the acctual values. We can call functions from
     //here or send it out depending on what we decide to go with 
 }    
 
-/*
-Name: Delay_Timer_ISR_Handler
-Summary:
-    Interrupt Service Routine. Check the Delay_Timer status and clear the interrupt
-    change the Count and Executed status
+//Name: Delay_Timer_ISR_Handler
+//Summary:
+//    Interrupt Service Routine. Check the Delay_Timer status and clear the interrupt
+//    change the Count and Executed status
 
-*/
 
-CY_ISR(Delay_Timer_ISR_Handler)
+_CY_ISR(Delay_Timer_ISR_Handler)
 {
     if(Delay_Timer_ReadPeriod() == DELAY_ACQUISITION)
     {
@@ -245,7 +227,7 @@ CY_ISR(Delay_Timer_ISR_Handler)
     }
     else if(Delay_Timer_ReadPeriod() == DELAY_PROCESSING)
     { 
-        decodeFlag=1;
+        decode_flag=1;
     }
     
     //Write 1 to the Contro_Reg_Delay_Timer to disable the Timer function 
@@ -257,14 +239,13 @@ CY_ISR(Delay_Timer_ISR_Handler)
 }    
 
 
-CY_ISR(DHT_Pin_ISR_Handler)
+_CY_ISR(DHT_Pin_ISR_Handler)
 {
     //Clear the interrupt request of the ISR DHT_Pin_ISR 
     DHT_Pin_ISR_ClearPending();
     //Clear the interrupt request of the pin DHT_Pin
     DHT_Pin_ClearInterrupt();
     //Read the counter values of Data_Timer for processing
-    CountValues_DataTimer[RisingEdge_Counts]=Data_Timer_ReadCounter();
-    RisingEdge_Counts++;
-}    
-/* [] END OF FILE */
+    countvalues_datatimer[risingedge_counts]=Data_Timer_ReadCounter();
+    risingedge_counts++;
+}
