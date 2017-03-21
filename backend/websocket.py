@@ -35,9 +35,17 @@ class GrobotWebSocket(tornado.websocket.WebSocketHandler):
     Args:
       message_type: The type of message that we want to handle.
       callback: The callback that we want to run when we get a message of that
-                type. It should take only the message as an argument. """
+                type. It should take the message as an argument, as well as the
+                specific GrobotWebSocket instance that triggered it. """
     logger.debug("Adding callback for messages of type '%s'." % (message_type))
     cls._message_callbacks[message_type] = callback
+
+  @classmethod
+  def get_num_clients(cls):
+    """
+    Returns:
+      The number of clients that are currently connected. """
+    return len(cls._open)
 
   def open(self, *args, **kwargs):
     """ Open a new websocket. """
@@ -72,6 +80,6 @@ class GrobotWebSocket(tornado.websocket.WebSocketHandler):
     # If we have a callback for that type, do it.
     mtype = message["type"]
     if mtype in self._message_callbacks:
-      self._message_callbacks[mtype](message)
+      self._message_callbacks[mtype](message, self)
     else:
       logger.warning("No callbacks for message of type '%s'." % (mtype))

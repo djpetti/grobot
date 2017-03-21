@@ -16,10 +16,22 @@ class State:
     # This dictionary actually stores the state.
     self.__state = {}
 
+    # Add the state callback.
+    websocket.GrobotWebSocket.add_message_handler("state",
+                                                  self.__state_callback)
+
   def __send_message(self):
     """ Sends a broadcast message when the state changes. """
     message = {"type": "state", "state": self.__state}
     websocket.GrobotWebSocket.broadcast_message(message)
+
+  def __state_callback(self, message, client):
+    """ Callback that sends back the state when a client sends a state message.
+    Args:
+      message: The message received.
+      client: The client that sent the message. """
+    logger.debug("Sending state to %s, which requested it." % (client))
+    client.write_message({"type": "state", "state": self.__state})
 
   def set(self, key, value):
     """ Sets a particular item in the state.

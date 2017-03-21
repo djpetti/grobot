@@ -37,13 +37,18 @@ class StateTest(base_test.BaseTest):
 class StateTestWithWebsocket(base_test.BaseWebSocketTest):
   """ Tests for the state class that integrate with websockets. """
 
-  def test_mcu_events(self):
-    """ Tests that MCU events trigger the appropriate messages. """
+  def setUp(self):
+    super().setUp()
+
+    # Clear the state.
+    state.get_state().reset()
+
+  def test_state_change_events(self):
+    """ Tests that state change events trigger the appropriate messages. """
     def receive_message(message):
       """ Used as a callback to read messages from the websocket.
       Args:
         message: The message that was received. """
-      # None means the connection was closed.
       message = json.loads(message)
       self.assertEqual({"type": "state", "state": {"mcu_alive": False}},
                        message)
@@ -53,5 +58,29 @@ class StateTestWithWebsocket(base_test.BaseWebSocketTest):
       """ Sends a message after the socket is connected. """
       # Setting the mcu_alive state attribute should trigger a message.
       state.get_state().set("mcu_alive", False)
+
+    self._connect_and_run(on_connect, receive_message)
+
+  def test_state_callback(self):
+    """ Tests that we can force it to send us state information by making a
+    request. """
+    def receive_message(message):
+      """ Used as a callback to receive messages from the websocket.
+      Args:
+        message: The message that was received. """
+      message = json.loads(message)
+      self.assertEqual(message["type"], "state")
+      self.assertIn("state", message)
+
+      self.stop()
+
+    def on_connect(future):
+      """ Sends a state message after the socket is connected.
+      Args:
+        future: The connection future. """
+      message = {"type": "state"}
+
+      socket = future.result()
+      socket.write_message(json.dumps(message))
 
     self._connect_and_run(on_connect, receive_message)
