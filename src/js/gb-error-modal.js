@@ -12,7 +12,7 @@ gbErrorModal.create = function() {
         type: Boolean,
         value: false,
         observer: '_openedChanged',
-        statePath: 'opened',
+        statePath: 'errorModalOpened',
       }
     },
 
