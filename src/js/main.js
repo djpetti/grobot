@@ -17,9 +17,8 @@ main.reduxBehavior = null;
 main.getReduxStore = function() {
   if (!main.reduxStore) {
     // Create a new one.
-    main.reduxStore = Redux.createStore(function(state, action) {
-      return state;
-    });
+    console.log("Creating Redux store.")
+    main.reduxStore = Redux.createStore(actions.grobotAppReducer);
   }
 
   return main.reduxStore;
@@ -37,3 +36,9 @@ main.getReduxBehavior = function() {
 
   return main.reduxBehavior;
 };
+
+/** Initializes everything when the main view is loaded.
+ */
+main.initMain = function() {
+  var backend = new websockets.Backend();
+}

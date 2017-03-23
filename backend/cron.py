@@ -7,6 +7,7 @@ import tornado.ioloop
 
 from .serial_talker import Message
 from . import state
+from . import websocket
 
 
 logger = logging.getLogger(__name__)
