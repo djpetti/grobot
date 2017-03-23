@@ -1,113 +1,29 @@
-#include <project.h>
+//#include <project.h>
 
 #include "dht11.h"
+#include <stdint.h>
+#include <dht.h>
+
+#define null 0
 
 void delay(void);
 void unpack_dht_data(void);
 
-uint8_t check = 0;
-uint8_t decode_flag=0;
+uint8_t check;
+uint8_t decode_flag;
 uint8_t decoded_temperature_data;
 uint8_t decoded_humidity_data;
 
-int temperature_values[8], humidity_values[8];
+int temperature_values[8];
+int humidity_values[8];
 int diff_count_values[44]={0};
 int countvalues_datatimer[44]={0};
 int executed;
 int count;
 int risingedge_counts=0;
 
-_CY_ISR_PROTO(Delay_Timer_ISR_Handler);
-_CY_ISR_PROTO(DHT_Pin_ISR_Handler);
-
-
-//What dhtmain does:
-//    Starts the dht components
-//    Get output from dht11
-//    Send out results
-//
-//Paramers: None
-//Returns: None
-
-
-void dhtmain(){
-    decoded_temperature_data = -255;
-    decoded_humidity_data = -255;
-    
-    //Starts the data timer and delay timer components
-    Data_Timer_Start();
-    Delay_Timer_Start();
-    
-    //Write Controlregdatatimer and controlregdealytimer value to 1 to keep them reset
-    Control_Reg_Data_Timer_Write(1);
-    Control_Reg_Delay_Timer_Write(1);
-    
-    //The pin value will be written as 1 as the starting condition
-    DHT_Pin_Write(1);
-    
-    //Initilize dhtpinisr and delaytimeriser
-    DHT_Pin_ISR_StartEx(DHT_Pin_ISR_Handler);
-    Delay_Timer_ISR_StartEx(Delay_Timer_ISR_Handler);
-    
-    //Disable the ISR compondents
-    DHT_Pin_ISR_Disable();
-    Delay_Timer_ISR_Disable();
-    
-    //Initilize count to 0 and executed to 1
-    count = 0;
-    executed = 1;
-    
-    // Enable Global Interrupts
-    CyGlobalIntEnable;
-    
-    //This is going to run until decode dht data is called
-    //After this is done, the loop will end, and the data will
-    //be in the respective variables
-    int x;
-    for(x=0;x<1;){
-        
-        if(executed == 1 && count == 0){
-            executed = 0;
-            risingedge_counts = 0;
-            CyDelayUs(50);
-            DHT_Pin_Write(0);
-            Delay_Timer_WritePeriod(DELAY_ACQUISITION);
-            //Call the delay function to stay the DHT_Pin as low for 20ms 
-            delay_funct();
-        }    
-        
-        if(count >= 2 && executed ==0){
-            Control_Reg_Data_Timer_Write(0);
-            // Write 1 to DHT_Pin 
-            DHT_Pin_Write(1);
-            // Enable DHT_Pin_ISR to get data from the DHT11 sensor
-            DHT_Pin_ISR_Enable();
-            // To keep the DHT_Pin as High for 30us, the below function is called 
-            CyDelayUs(30);
-            Delay_Timer_WritePeriod(DELAY_PROCESSING);
-            Control_Reg_Delay_Timer_Write(0);
-            // Change the Executed and Count status to decode the DHT11 values
-            executed=2;
-            cnt=0;
-        }
-        
-        if(decode_flag==1){
-            Control_Reg_Data_Timer_Write(1);
-            DHT_Pin_ISR_Disable(); 
-            DHT_Pin_Write(1);   
-            decode_flag=0;
-            Decode_DHT_Data();
-            executed=1;
-            count=0;
-            x=1;
-        }    
-        
-    }   
-    
-    //When exited we will have the data in the two "decoded" variables
-    
-}    
-
+//_CY_ISR_PROTO(Delay_Timer_ISR_Handler);
+//_CY_ISR_PROTO(DHT_Pin_ISR_Handler);
 
 //What Return_Decoded_Temperature does:
 //    -Returns the data in decoded_temperature_data
@@ -115,9 +31,9 @@ void dhtmain(){
 //Parameters: None
 //Returns: uint8_t decoded_temperature_data
 
-uint8_t Return_Decoded_Temperature(){
+uint8_t dht_get_temperature(){
     
-    if(decoded_temperature_data == -255){
+    if(decoded_temperature_data == null){
         return -1;
     }
     else{
@@ -131,9 +47,9 @@ uint8_t Return_Decoded_Temperature(){
 //Parameters: None
 //Returns: uint8_t decoded_humidity_data
 
-uint8_t Return_Decoded_Temperature(){
+uint8_t dht_get_humidity(){
     
-    if(decoded_humidity_data == -255){
+    if(decoded_humidity_data == null){
         return -1;
     }else{
         return decoded_humidity_data;
@@ -167,7 +83,7 @@ void delay_funct(void){
 //Parameters: None
 //Returns: None
 
-void Decode_DHT_Data(void){
+void decode_DHT_data(void){
     int i;
     for(i=0; i<44; i++){
         diff_count_values[i]=countvalues_datatimer[i-1]-countvalues_datatimer[i];
@@ -176,19 +92,19 @@ void Decode_DHT_Data(void){
     int j;
     for(j=0; j<8; j++){
         if(diff_count_values[j+3]>100){
-            Humidity_Values[7-j]=1;
+            humidity_values[7-j]=1;
         }else{
-            Humidity_Values[7-j]=0;
+            humidity_values[7-j]=0;
         }
         
         if(diff_count_values[j+19]>100){
-            Temperature_Values[7-j]=1;
+            temperature_values[7-j]=1;
         }else{
-            Temperature_Values[7-j]=0;
+            temperature_values[7-j]=0;
         }
     }
-    decoded_temperature_data = (uint8_t)((Temperature_Values[7]<<7) + (Temperature_Values[6]<<6) + (Temperature_Values[5]<<5) + (Temperature_Values[4]<<4) + (Temperature_Values[3] <<3) + (Temperature_Values[2] <<2) + (Temperature_Values[1]<<1) + Temperature_Values[0]);
-    decoded_humidity_data=(uint8_t)((Humidity_Values[7]<<7) + (Humidity_Values[6]<<6) + (Humidity_Values[5]<<5) + (Humidity_Values[4]<<4) + (Humidity_Values[3] <<3) + (Humidity_Values[2] <<2) + (Humidity_Values[1]<<1) + Humidity_Values[0]);
+    decoded_temperature_data = (uint8_t)((temperature_values[7]<<7) + (temperature_values[6]<<6) + (temperature_values[5]<<5) + (temperature_values[4]<<4) + (temperature_values[3] <<3) + (temperature_values[2] <<2) + (temperature_values[1]<<1) + temperature_values[0]);
+    decoded_humidity_data=(uint8_t)((humidity_values[7]<<7) + (humidity_values[6]<<6) + (humidity_values[5]<<5) + (humidity_values[4]<<4) + (humidity_values[3] <<3) + (humidity_values[2] <<2) + (humidity_values[1]<<1) + humidity_values[0]);
     
     //Now the data is decoded
     decode_flag = 1;
@@ -200,7 +116,6 @@ void Decode_DHT_Data(void){
 //Summary:
 //    Interrupt Service Routine. Check the Delay_Timer status and clear the interrupt
 //    change the Count and Executed status
-
 
 _CY_ISR(Delay_Timer_ISR_Handler){
     
@@ -219,7 +134,6 @@ _CY_ISR(Delay_Timer_ISR_Handler){
     Delay_Timer_ISR_ClearPending();
 }    
 
-
 _CY_ISR(DHT_Pin_ISR_Handler){
     //Clear the interrupt request of the ISR DHT_Pin_ISR 
     DHT_Pin_ISR_ClearPending();
@@ -229,3 +143,92 @@ _CY_ISR(DHT_Pin_ISR_Handler){
     countvalues_datatimer[risingedge_counts]=Data_Timer_ReadCounter();
     risingedge_counts++;
 }
+
+void dht_init(){
+    check = 0;
+    decode_flag = 0;
+    
+    //Starts the data timer and delay timer components
+    Data_Timer_Start();
+    Delay_Timer_Start();
+    
+    //Write Controlregdatatimer and controlregdealytimer value to 1 to keep them reset
+    Control_Reg_Data_Timer_Write(1);
+    Control_Reg_Delay_Timer_Write(1);
+    
+    //The pin value will be written as 1 as the starting condition
+    DHT_Pin_Write(1);
+    
+    //Initilize dhtpinisr and delaytimeriser
+    DHT_Pin_ISR_StartEx(DHT_Pin_ISR_Handler);
+    Delay_Timer_ISR_StartEx(Delay_Timer_ISR_Handler);
+    
+    //Disable the ISR compondents
+    DHT_Pin_ISR_Disable();
+    Delay_Timer_ISR_Disable();
+    
+    //Initilize count to 0 and executed to 1
+    count = 0;
+    executed = 1;
+}   
+
+
+//What dht_start does:
+//    Starts the dht components
+//    Get output from dht11
+//    Send out results
+//
+//Paramers: None
+//Returns: None
+
+
+void dht_start(){
+    
+    // Enable Global Interrupts
+    CyGlobalIntEnable;
+    
+    //This is going to run until decode dht data is called
+    //After this is done, the loop will end, and the data will
+    //be in the respective variables
+    for(;;){
+        
+        if(executed == 1 && count == 0){
+            executed = 0;
+            risingedge_counts = 0;
+            CyDelayUs(50);
+            DHT_Pin_Write(0);
+            Delay_Timer_WritePeriod(DELAY_ACQUISITION);
+            //Call the delay function to set the DHT_Pin as low for 20ms 
+            delay_funct();
+        }    
+        
+        if(count >= 2 && executed ==0){
+            Control_Reg_Data_Timer_Write(0);
+            // Write 1 to DHT_Pin 
+            DHT_Pin_Write(1);
+            // Enable DHT_Pin_ISR to get data from the DHT11 sensor
+            DHT_Pin_ISR_Enable();
+            // To keep the DHT_Pin as High for 30us, the below function is called 
+            CyDelayUs(30);
+            Delay_Timer_WritePeriod(DELAY_PROCESSING);
+            Control_Reg_Delay_Timer_Write(0);
+            // Change the Executed and Count status to decode the DHT11 values
+            executed=2;
+            count=0;
+        }
+        
+        if(decode_flag==1){
+            Control_Reg_Data_Timer_Write(1);
+            DHT_Pin_ISR_Disable(); 
+            DHT_Pin_Write(1);   
+            decode_flag=0;
+            decode_DHT_data();
+            executed=1;
+            count=0;
+            break;
+        }    
+        
+    }   
+    
+    //When exited we will have the data in the two "decoded" variables
+}    
