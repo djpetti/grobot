@@ -9,7 +9,7 @@ actions.UPDATE_BACKEND_STATE = 'UPDATE_BACKEND_STATE';
  * @returns The created action.
  */
 actions.updateBackendState = function(state) {
-  return {type: actions.UPDATE_BACKEND_STATE, state}
+  return {type: actions.UPDATE_BACKEND_STATE, state};
 };
 
 /** The initial state of the application. */
@@ -26,7 +26,7 @@ actions.grobotAppReducer = function(state = actions.initialState, action) {
   // Handle our actions.
   switch (action.type) {
     case actions.UPDATE_BACKEND_STATE:
-      var showErrorModal = !action.state['mcu_alive'];
+      var showErrorModal = !action.state.mcu_alive;
       return Object.assign({}, state, {errorModalOpened: showErrorModal});
 
     default:
