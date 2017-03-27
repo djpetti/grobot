@@ -32,11 +32,11 @@ def build_polymer_app():
                                       "build/bundled/service-worker.js")
   os.rename(service_worker_file, built_service_worker)
 
-def run_all_tests():
-  """ Runs all the tests.
+def run_python_tests():
+  """ Runs the Python tests.
   Returns:
     True if the tests all succeed, False if there are failures. """
-  print("Starting tests...")
+  print("Starting Python tests...")
 
   loader = unittest.TestLoader()
   # Get the directory this module is in.
@@ -47,6 +47,31 @@ def run_all_tests():
   if not test_result.wasSuccessful():
     return False
 
+  return True
+
+def run_js_tests():
+  """ Runs the JavaScript tests.
+  Returns:
+    True if the tests all succeed, False if there are failures. """
+  print("Starting JS tests...")
+
+  # Get the directory this module is in.
+  dir_path = os.path.dirname(os.path.realpath(__file__))
+  # Run intern-client directly.
+  retcode = subprocess.call(["intern-client", "config=test/intern"],
+                            cwd=dir_path)
+  if retcode:
+    return False
+  return True
+
+def run_all_tests():
+  """ Runs all the tests.
+  Returns:
+    True if the tests all succeed, False if there are failures. """
+  if not run_python_tests():
+    return False
+  if not run_js_tests():
+    return False
   return True
 
 
