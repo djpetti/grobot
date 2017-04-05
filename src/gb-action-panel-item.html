@@ -1,0 +1,28 @@
+<link rel="import" href="../bower_components/iron-image/iron-image.html">
+<link rel="import" href="../bower_components/paper-item/paper-icon-item.html">
+<link rel="import" href="../bower_components/paper-item/paper-item.html">
+<link rel="import" href="../bower_components/paper-item/paper-item-body.html">
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="shared-styles.html">
+
+<dom-module id="gb-action-panel-item">
+  <template>
+    <style include="shared-styles"></style>
+
+    <paper-item>
+      <paper-item-body two-line>
+        <div class="status-item-title" id="title"></div>
+        <div class="text-light" id="description"></div>
+      </paper-item-body>
+      <paper-icon-item>
+        <iron-image class="icon status-icon" src="../images/icon_check.svg"
+                    alt="check" id="icon">
+        </iron-image>
+      </paper-icon-item>
+    </paper-item>
+
+  </template>
+
+  <script src="js/gb-action-panel-item.js"></script>
+
+</dom-module>

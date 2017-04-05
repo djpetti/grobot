@@ -1,7 +1,7 @@
 define([
   'intern!object',
   'intern/chai!assert',
-  'app/actions.js'
+  'app/actions.js',
 ], function (registerSuite, assert) {
   registerSuite({
     name: 'actionsTest',
@@ -12,15 +12,14 @@ define([
       // Empty action.
       const state = actions.initialState;
       let new_state = actions.grobotAppReducer(state, 'BAD_ACTION');
-      // The state shouldn't be copied, so this will be a strictEqual.
-      assert.strictEqual(state, new_state);
+      assert.deepEqual(state, new_state);
     },
 
     /** Test that the UPDATE_BACKEND_STATE action works as expected. */
     backendState: function() {
       // Create an initial state to start with.
       const state = actions.initialState;
-      assert.isFalse(state.errorModalOpened);
+      assert.isFalse(state.fromBackend.errorModalOpened);
 
       // Now, create an action that should not change the state.
       const alive_backend_state = {mcu_alive: true};
@@ -37,11 +36,25 @@ define([
       // The state should change.
       new_state = actions.grobotAppReducer(state, dead_action);
       assert.notDeepEqual(state, new_state);
-      assert.isTrue(new_state.errorModalOpened);
+      assert.isTrue(new_state.fromBackend.errorModalOpened);
 
       // Change it back.
       new_state = actions.grobotAppReducer(new_state, alive_action);
       assert.deepEqual(state, new_state);
-    }
+    },
+
+    /** Test that the SET_ACTION_PANEL action works as expected. */
+    setActionPanel: function() {
+      const state = actions.initialState;
+      // It should be nothing initially.
+      assert.isNull(state.actionPanel.actionPanel);
+
+      // Set a placeholder value.
+      const panel_action = actions.setActionPanel('actionPanel');
+      const new_state = actions.grobotAppReducer(state, panel_action);
+
+      // It should have set it.
+      assert.strictEqual('actionPanel', new_state.actionPanel.actionPanel);
+    },
   });
 });

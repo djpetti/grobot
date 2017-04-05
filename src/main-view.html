@@ -45,10 +45,6 @@
         margin-bottom: 10px;
       }
 
-      .status-item-title {
-        font-size: 20px;
-      }
-
       .heading-white {
         --paper-card-header-color: #FFFFFF;
       }
@@ -64,44 +60,7 @@
     <iron-media-query query="(min-width: 1000px)" query-matches="{{wide}}"></iron-media-query>
     <div class="grouph" wide-layout$="[[wide]]">
 
-      <gb-action-panel>
-        <paper-item>
-          <paper-item-body two-line>
-            <div class="status-item-title">Water is low.</div>
-            <div class="text-light">Please add water to the system.</div>
-          </paper-item-body>
-          <paper-icon-item>
-            <img class="icon status-icon" src="../images/icon_error.svg" alt="error cross">
-          </paper-icon-item>
-        </paper-item>
-        <paper-item>
-          <paper-item-body two-line>
-            <div class="status-item-title">PH solution is low.</div>
-            <div class="text-light">Please refill the PH reservoir.</div>
-          </paper-item-body>
-          <paper-icon-item>
-            <img class="icon status-icon" src="../images/icon_error.svg" alt="error cross">
-          </paper-icon-item>
-        </paper-item>
-        <paper-item>
-          <paper-item-body two-line>
-            <div class="status-item-title">Ambient temperature is low.</div>
-            <div class="text-light">A warmer location is optimal for growing.</div>
-          </paper-item-body>
-          <paper-icon-item>
-            <img class="icon status-icon" src="../images/icon_warning.svg" alt="error cross">
-          </paper-icon-item>
-        </paper-item>
-        <paper-item>
-          <paper-item-body two-line>
-            <div class="status-item-title">System is running.</div>
-            <div class="text-light">Your GroBot is powered on and active.</div>
-          </paper-item-body>
-          <paper-icon-item>
-            <img class="icon status-icon" src="../images/icon_check.svg" alt="error cross">
-          </paper-icon-item>
-        </paper-item>
-      </gb-action-panel>
+      <gb-action-panel id="actionPanel"></gb-action-panel>
 
       <paper-card class="column-card heading-white" heading="Growing Progress"
                   image="../images/plants-growing.svg" alt="Plants Growing"
@@ -115,7 +74,8 @@
                 <paper-progress class="grow-progress" value="60" min="0" max="100"></paper-progress>
               </paper-item-body>
               <paper-item-icon>
-                <img class="grow-icon" src="../images/icon_lettuce.svg" alt="lettuce icon">
+                <iron-image class="grow-icon" src="../images/icon_lettuce.svg" alt="lettuce icon">
+                </iron-image>
               </paper-item-icon>
             </paper-item>
             <paper-item>
@@ -125,7 +85,8 @@
                 <paper-progress class="grow-progress" value="10" min="0" max="100"></paper-progress>
               </paper-item-body>
               <paper-item-icon>
-                <img class="grow-icon" src="../images/icon_basil.svg" alt="basil icon">
+                <iron-image class="grow-icon" src="../images/icon_basil.svg" alt="basil icon">
+                </iron-image>
               </paper-item-icon>
             </paper-item>
             <paper-item>
@@ -135,7 +96,8 @@
                 <paper-progress class="grow-progress" value="35" min="0" max="100"></paper-progress>
               </paper-item-body>
               <paper-item-icon>
-                <img class="grow-icon" src="../images/icon_kale.svg" alt="kale icon">
+                <iron-image class="grow-icon" src="../images/icon_kale.svg" alt="kale icon">
+                </iron-image>
               </paper-item-icon>
             </paper-item>
           </paper-listbox>
