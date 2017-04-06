@@ -16,7 +16,7 @@ from . import state
 logger = logging.getLogger(__name__)
 
 
-class _Parser:
+class Parser:
   """ Parses raw messages, and emits Message instances. """
 
   class State(enum.Enum):
@@ -154,9 +154,13 @@ class Message:
   # in a position to handle them.
   SendSensorStatus = "ENSTAT"
 
-  def __init__(self, *args):
+  def __init__(self, *args, source=1):
     """ Checks the number of arguments, and defers to the proper method for
-    construction. See the following two methods for the details. """
+    construction. See the following two methods for the details.
+    Args:
+      source: The source to use when sending messages. Defaults to 1. """
+    self.__source = source
+
     if not len(args):
       # Default-initialize everything.
       self.__initialize_default()
@@ -179,7 +183,7 @@ class Message:
             system MCU.
       All further arguments will be interpreted as fields. """
     self.command = command
-    self.source = 1
+    self.source = self.__source
     self.dest = dest
     self.fields = args
 
@@ -187,7 +191,7 @@ class Message:
     """ Returns:
       The raw message that can be sent over the serial interface. """
     # Create the raw message.
-    raw = "<%s/1%d" % (self.command, self.dest)
+    raw = "<%s/%d%d" % (self.command, self.source, self.dest)
     for field in self.fields:
       raw += "/"
       raw += str(field)
@@ -228,7 +232,7 @@ class SerialTalker:
                                                                     baudrate))
 
     # The parser we use to parse received messages.
-    self.__parser = _Parser()
+    self.__parser = Parser()
 
     # Setup IOLoop to process serial events.
     ioloop.add_handler(self.__conn, self.__handle_serial_event,
@@ -293,8 +297,8 @@ class SerialTalker:
   def write_command(self, *args, **kwargs):
     """ This is really just a convenience method for building a message and
     sending it to the MCU. All arguments are passed transparently to a
-    Message intstance. It is asyncronous, will return before the data is fully
-    sent. """
+    Message intstance. It is asyncronous, and will return before the data is
+    fully sent. """
     message = Message(*args, **kwargs)
     # Add it to the buffer so we can write when ready.
     self.__write_buffer += message.get_raw()
