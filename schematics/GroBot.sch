@@ -29,6 +29,7 @@ LIBS:atmel
 LIBS:contrib
 LIBS:valves
 LIBS:psoc
+LIBS:stm
 LIBS:GroBot-cache
 EELAYER 25 0
 EELAYER END
@@ -1253,4 +1254,17 @@ Wire Wire Line
 Connection ~ 6700 2850
 Connection ~ 7550 2850
 Connection ~ 8100 2850
+$Comp
+L STM32F091CBU6 U?
+U 1 1 58EAEB8D
+P 9850 3100
+F 0 "U?" H 9950 2700 60  0000 C CNN
+F 1 "STM32F091CBU6" H 9950 3000 60  0000 C CNN
+F 2 "" H 9950 2700 60  0000 C CNN
+F 3 "" H 9950 2700 60  0000 C CNN
+	1    9850 3100
+	1    0    0    -1  
+$EndComp
+Text Notes 3300 1900 0    60   ~ 0
+ANALOG REF
 $EndSCHEMATC
