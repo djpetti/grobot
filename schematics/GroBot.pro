@@ -1,4 +1,4 @@
-update=Sun 09 Apr 2017 09:51:42 PM EDT
+update=Sun 09 Apr 2017 10:22:09 PM EDT
 version=1
 last_client=kicad
 [pcbnew]
@@ -60,3 +60,4 @@ LibName28=contrib
 LibName29=valves
 LibName30=custom_lib/psoc
 LibName31=custom_lib/stm
+LibName32=custom_lib/power_reg
