@@ -42,5 +42,3 @@ gbActionPanelItem.setLevel = function(level) {
   // Set the icon correctly.
   this.$.icon.src = ICON_URLS_[level];
 };
-
-gbActionPanelItem.create();

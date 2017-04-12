@@ -59,8 +59,7 @@ def run_js_tests():
   # Get the directory this module is in.
   dir_path = os.path.dirname(os.path.realpath(__file__))
   # Run intern-client directly.
-  retcode = subprocess.call(["intern-client", "config=test/intern"],
-                            cwd=dir_path)
+  retcode = subprocess.call(["polymer", "test"], cwd=dir_path)
   if retcode:
     return False
   return True
