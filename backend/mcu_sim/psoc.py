@@ -2,6 +2,7 @@ from multiprocessing import Process
 import logging
 import os
 import pty
+import time
 
 from .. import serial_talker
 
@@ -79,6 +80,10 @@ class Psoc:
         # Handle the message.
         if message.command == serial_talker.Message.Ping:
           self.__handle_ping(message)
+
+      # Throttle so it doesn't use 100% CPU. Also, having a little delay is more
+      # realisting.
+      time.sleep(0.01)
 
   def get_device_name(self):
     """

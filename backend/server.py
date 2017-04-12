@@ -92,12 +92,14 @@ def make_serial(settings):
   return serial
 
 
-def main(dev_mode=False):
+def main(dev_mode=False, override_settings={}):
   """ Runs the main server event loop.
   Args:
     dev_mode: If set to True, it will serve data from the base directory instead
               of from the build directory. This is useful if we want to debug
-              stuff locally without running 'polymer build.'"""
+              stuff locally without running 'polymer build.'
+    override_settings: Settings that will be used to override the ones loaded
+                       from the file. """
   # Load the settings initially.
   try:
     settings_file = open("backend_settings.json")
@@ -107,6 +109,8 @@ def main(dev_mode=False):
 
   settings = json.load(settings_file)
   settings_file.close()
+  # Merge override settings.
+  settings = {**settings, **override_settings}
   logger.info("Loaded settings.")
 
   app = make_app(settings, dev_mode=dev_mode)

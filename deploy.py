@@ -8,6 +8,7 @@ import sys
 import unittest
 
 from backend import server
+from backend.mcu_sim import psoc
 
 
 """ Script to manage building and testing the web application. """
@@ -82,6 +83,8 @@ def main():
                       help="Rebuild polymer app and serve from build/bundled.")
   parser.add_argument("-t", "--test-only", action="store_true",
                       help="Only run the tests and nothing else.")
+  parser.add_argument("-m", "--mcu_simulation", action="store_true",
+                      help="Run with simulated MCU.")
   args = parser.parse_args()
 
   # Build the polymer app.
@@ -97,7 +100,14 @@ def main():
   # Run the dev server.
   if not args.test_only:
     print("Starting dev server...")
-    server.main(dev_mode=(not args.production))
+
+    # Enable MCU simulation if necessary.
+    settings = {}
+    if args.mcu_simulation:
+      sim = psoc.Psoc()
+      settings["mcu_serial"] = sim.get_device_name()
+
+    server.main(dev_mode=(not args.production), override_settings=settings)
 
 
 if __name__ == "__main__":
