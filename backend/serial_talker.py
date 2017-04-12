@@ -235,8 +235,11 @@ class SerialTalker:
     self.__parser = Parser()
 
     # Setup IOLoop to process serial events.
-    ioloop.add_handler(self.__conn, self.__handle_serial_event,
-                       tornado.ioloop.IOLoop.READ | tornado.ioloop.IOLoop.WRITE)
+    self.__ioloop = ioloop
+    # Initially, we only trigger on readable events.
+    self.__waiting_for_writable = False
+    self.__ioloop.add_handler(self.__conn, self.__handle_serial_event,
+                              tornado.ioloop.IOLoop.READ)
 
   def __del__(self):
     self.cleanup()
@@ -247,7 +250,7 @@ class SerialTalker:
       # Room to write.
       self.__handle_serial_write_event()
     if self.__conn.in_waiting:
-      # Room to read,
+      # Room to read.
       self.__handle_serial_read_event()
 
   def __handle_serial_read_event(self):
@@ -275,6 +278,18 @@ class SerialTalker:
     # Write as much as we can.
     self.__conn.write(self.__write_buffer[:can_write].encode("utf8"))
     self.__write_buffer = self.__write_buffer[can_write:]
+
+    # If we didn't write all of it, we want to listen for a writeable event so
+    # we can try writing the rest.
+    if (self.__write_buffer and not self.__waiting_for_writable):
+      self.__waiting_for_writable = True
+      self.__ioloop.update_handler(self.__conn,
+                                   tornado.ioloop.IOLoop.READ |
+                                   tornado.ioloop.IOLoop.WRITE)
+
+    elif (not self.__write_buffer and self.__waiting_for_writable):
+      self.__waiting_for_writable = False
+      self.__ioloop.update_handler(self.__conn, tornado.ioloop.IOLoop.READ)
 
   def add_message_handler(self, callback):
     """ Adds a callback that will be called whenever a message is received.
