@@ -95,11 +95,17 @@ actions.actionPanelReducer_ = function(state = {}, action) {
 
       switch (action.level) {
         case 'normal':
-          new_state.error.push(node);
+          new_state.normal.push(node);
+          break;
         case 'warning':
           new_state.warning.push(node);
+          break;
         case 'error':
           new_state.error.push(node);
+          break;
+        default:
+          console.error('Unknown action type: ' + action.level);
+          return state;
       }
 
       return new_state;
