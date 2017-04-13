@@ -10,10 +10,9 @@
     <script src="../../web-component-tester/browser.js"></script>
     <script src="../bower_components/polymer-redux/polymer-redux.js"></script>
     <script src="../bower_components/redux/index.js"></script>
-    <script src="../src/js/actions.js"></script>
     <script src="../src/js/main.js"></script>
 
-    <link rel="import" href="../src/gb-action-panel.html">
+    <script src="../src/js/actions.js"></script>
   </head>
   <body>
     <test-fixture id="gbActionPanelFixture">
@@ -23,10 +22,49 @@
     </test-fixture>
 
     <script>
-      suite('<gb-action-panel>', function() {
-        test('instantiating the element works', function() {
-          var element = fixture('gbActionPanelFixture');
-          assert.equal(element.is, 'gb-action-panel');
+      suite('actions.js', function() {
+        // It's a little annoying to have to do tests that really don't need a
+        // browser in the browser, but whatever...
+
+        test('an unknown action does not result in a state change',
+             function(done) {
+          // Empty action.
+          const state = actions.initialState;
+          let new_state = actions.grobotAppReducer(state, 'BAD_ACTION');
+          // The state shouldn't have changed.
+          assert.deepEqual(state, new_state);
+
+          done();
+        });
+
+        test('the UPDATE_BACKEND_STATE action works',
+             function(done) {
+					// Create an initial state to start with.
+					const state = actions.initialState;
+					assert.isFalse(state.fromBackend.errorModalOpened);
+
+					// Now, create an action that should not change the state.
+					const alive_backend_state = {mcu_alive: true};
+					const alive_action = actions.updateBackendState(alive_backend_state);
+
+					// The state should remain the same.
+					let new_state = actions.grobotAppReducer(state, alive_action);
+					assert.deepEqual(state, new_state);
+
+					// Now, create an action that changes the state.
+					const dead_backend_state = {mcu_alive: false};
+					const dead_action = actions.updateBackendState(dead_backend_state);
+
+					// The state should change.
+					new_state = actions.grobotAppReducer(state, dead_action);
+					assert.notDeepEqual(state, new_state);
+					assert.isTrue(new_state.fromBackend.errorModalOpened);
+
+					// Change it back.
+					new_state = actions.grobotAppReducer(new_state, alive_action);
+					assert.deepEqual(state, new_state);
+
+          done();
         });
       });
     </script>
