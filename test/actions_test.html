@@ -103,8 +103,8 @@
           new_state = actions.grobotAppReducer(new_state, add_item_action);
 
           // Make sure it got added in the right place.
-          assert.equal(1, new_state.actionPanel.normal.length);
-          let got_item = new_state.actionPanel.normal[0];
+          assert.equal(1, new_state.actionPanel.numNormal);
+          let got_item = new_state.actionPanel.items[0];
           assert.equal('Test', got_item.title);
           assert.equal('Test item', got_item.description);
           assert.equal('normal', got_item.level);
@@ -115,8 +115,8 @@
           new_state = actions.grobotAppReducer(new_state, add_item_action);
 
           // Make sure it got added in the right place.
-          assert.equal(1, new_state.actionPanel.warning.length);
-          got_item = new_state.actionPanel.warning[0];
+          assert.equal(1, new_state.actionPanel.numWarning);
+          got_item = new_state.actionPanel.items[1];
           assert.equal('Test', got_item.title);
           assert.equal('Test item', got_item.description);
           assert.equal('warning', got_item.level);
@@ -127,8 +127,8 @@
           new_state = actions.grobotAppReducer(new_state, add_item_action);
 
           // Make sure it got added in the right place.
-          assert.equal(1, new_state.actionPanel.error.length);
-          got_item = new_state.actionPanel.error[0];
+          assert.equal(1, new_state.actionPanel.numError);
+          got_item = new_state.actionPanel.items[2];
           assert.equal('Test', got_item.title);
           assert.equal('Test item', got_item.description);
           assert.equal('error', got_item.level);

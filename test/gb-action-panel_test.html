@@ -14,6 +14,7 @@
     <script src="../src/js/main.js"></script>
 
     <link rel="import" href="../src/gb-action-panel.html">
+    <link rel="import" href="../src/gb-action-panel-item.html">
   </head>
   <body>
     <test-fixture id="gbActionPanelFixture">
@@ -24,10 +25,175 @@
 
     <script>
       suite('<gb-action-panel>', function() {
-        test('instantiating the element works', function() {
-          var element = fixture('gbActionPanelFixture');
-          assert.equal(element.is, 'gb-action-panel');
+        // Mock Redux state for testing.
+        fakeState = actions.initialState;
+        // Any actions dispatched to the fake state.
+        dispatchedActions = [];
+        element = null;
+
+        setup(function() {
+          // We're going to mock our Redux store.
+          main.getReduxStore = function() {
+            return {
+              /** Get the fake state.
+               * @returns The fake state. */
+              getState: function() {
+                return fakeState
+              },
+
+              /** Save actions, so we can verify that they happen, but don't
+              /* change the state. (We'll do that manually.)
+              /* @param action The action that we are dispatching. */
+              dispatch: function(action) {
+                dispatchedActions.push(action);
+              },
+            };
+          };
+
+          // This only works in the setup() function...
+          element = fixture('gbActionPanelFixture');
         });
+
+        /** Helper function that adds a new item to the action panel, and
+         * updates the fake Redux state accordingly.
+         * @private
+         * @param title The title of the item.
+         * @param description The description of the item.
+         * @param The level of the item.
+         * @returns The added item node. */
+        addItem_ = function(title, description, level) {
+          const item = element.addItem(title, description, level);
+
+          // Add to the fake state.
+          fakeState.actionPanel.items.push(item);
+          switch (level) {
+            case 'normal':
+              ++fakeState.actionPanel.numNormal;
+              break;
+            case 'warning':
+              ++fakeState.actionPanel.numWarning;
+              break;
+            case 'error':
+              ++fakeState.actionPanel.numError;
+              break;
+            default:
+              console.error('Testing: unknown level: ' + level);
+              break;
+          }
+
+          return item;
+        };
+
+        /** Helper function that ensures that items are correctly sorted by
+         * level.
+         * @private
+         * @param num_children How many children we expect to have.
+         * @returns True if everything is sorted correctly and we have the
+         *          expected number of children, false otherwise. */
+        checkOrder_ = function(num_children) {
+          let children = Polymer.dom(element).children;
+          if (children.length != num_children) {
+            // Does not have expected number of children.
+            return false;
+          }
+
+          let saw_error = false;
+          let saw_warning = false;
+          let saw_normal = false;
+
+          for (i = 0; i < children.length; ++i) {
+            switch (children[i].getLevel()) {
+              case 'error':
+                if (saw_warning || saw_normal) {
+                  // Error after warning or normal.
+                  return false;
+                }
+                saw_error = true;
+                break;
+
+              case 'warning':
+                if (saw_normal) {
+                  // Warning after normal.
+                  return false;
+                }
+                saw_warning = true;
+                break;
+
+              case 'normal':
+                saw_normal = true;
+                break;
+            }
+          }
+
+          return true;
+        };
+
+        test('instantiating the element works', function() {
+          assert.equal(element.is, 'gb-action-panel');
+
+          // Make sure we dispatched the SET_ACTION_PANEL action on creation.
+          assert.equal(1, dispatchedActions.length);
+          assert.equal(dispatchedActions[0].type, actions.SET_ACTION_PANEL);
+          assert.equal(element, dispatchedActions[0].actionPanel);
+        });
+
+        test('added elements are there and in correct order', function() {
+          // No items initially...
+          checkOrder_(0);
+
+          // Try adding an item to the panel.
+          addItem_('Test', 'Test item', 'normal');
+          // We should end up with a new element in the dom.
+          checkOrder_(1);
+
+          // Try adding an error element, which should go above it.
+          addItem_('Error', 'Test item', 'error');
+          assert.equal(2, Polymer.dom(element).children.length);
+          // Check the ordering.
+          checkOrder_(2);
+
+          // Try adding a warning element, which should go in between.
+          addItem_('Warning', 'Test item', 'warning');
+          checkOrder_(3);
+
+          // Try adding another warning element.
+          addItem_('Warning 2', 'Test item', 'warning');
+          checkOrder_(4);
+
+          // Try adding another error element.
+          addItem_('Error 2', 'Test item', 'error');
+          checkOrder_(5);
+
+          // Try adding another normal element.
+          addItem_('Normal 2', 'Test item', 'normal');
+          checkOrder_(6);
+        });
+
+        test('a corner case: add warning with no errors', function() {
+          // No items initially...
+          checkOrder_(0);
+
+          // Add a normal item.
+          addItem_('Test', 'Test item', 'normal');
+          checkOrder_(1);
+
+          // Add a warning item and check the ordering.
+          addItem_('Warning', 'Test item', 'warning');
+          checkOrder_(2);
+        });
+
+        test('a corner case: add warning with no normal items', function() {
+          // No items initially...
+          checkOrder_(0);
+
+          // Add an error item.
+          addItem_('Error', 'Test item', 'error');
+          checkOrder_(1);
+
+          // Add a warning item.
+          addItem_('Warning', 'Test item', 'warning');
+          checkOrder_(2);
+        })
       });
     </script>
   </body>

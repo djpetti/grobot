@@ -47,9 +47,12 @@ actions.initialState = {
     // Singleton action panel for the main view.
     actionPanel: null,
     // What items are currently visible in the action panel.
-    error: [],
-    warning: [],
-    normal: [],
+    items: [],
+
+    // How many of each type of item there are.
+    numError: 0,
+    numWarning: 0,
+    numNormal: 0,
   },
 };
 
@@ -84,6 +87,21 @@ actions.actionPanelReducer_ = function(state = {}, action) {
     case actions.ADD_PANEL_ITEM:
       var new_state = Object.assign({}, state)
 
+      switch (action.level) {
+        case 'normal':
+          ++new_state.numNormal;
+          break;
+        case 'warning':
+          ++new_state.numWarning;
+          break;
+        case 'error':
+          ++new_state.numError;
+          break;
+        default:
+          console.error('Unknown action type: ' + action.level);
+          return state;
+      }
+
       // Add the actual item to the DOM.
       let panel = state.actionPanel;
       if (!panel) {
@@ -91,22 +109,9 @@ actions.actionPanelReducer_ = function(state = {}, action) {
         // We can't really update the state reasonably in this case.
         return state;
       }
-      let node = panel.addItem(action.title, action.description, action.level);
 
-      switch (action.level) {
-        case 'normal':
-          new_state.normal.push(node);
-          break;
-        case 'warning':
-          new_state.warning.push(node);
-          break;
-        case 'error':
-          new_state.error.push(node);
-          break;
-        default:
-          console.error('Unknown action type: ' + action.level);
-          return state;
-      }
+      let node = panel.addItem(action.title, action.description, action.level);
+      new_state.items.push(node);
 
       return new_state;
 
