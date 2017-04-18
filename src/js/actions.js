@@ -53,6 +53,9 @@ actions.initialState = {
     numError: 0,
     numWarning: 0,
     numNormal: 0,
+
+    // The panel gives a "summary" message that has a level also.
+    summaryLevel: 'normal',
   },
 };
 
@@ -102,6 +105,16 @@ actions.actionPanelReducer_ = function(state = {}, action) {
           return state;
       }
 
+      // Update the summary level. The summary level always gets set to the
+      // highest level of any item in the panel.
+      if (new_state.numError > 0) {
+        new_state.summaryLevel = 'error';
+      } else if (new_state.numWarning > 0) {
+        new_state.summaryLevel = 'warning';
+      } else {
+        new_state.summaryLevel = 'normal';
+      }
+
       // Add the actual item to the DOM.
       let panel = state.actionPanel;
       if (!panel) {
@@ -111,6 +124,8 @@ actions.actionPanelReducer_ = function(state = {}, action) {
       }
 
       let node = panel.addItem(action.title, action.description, action.level);
+      // Update the summary panel.
+      panel.updatePanelTop(new_state);
       new_state.items.push(node);
 
       return new_state;

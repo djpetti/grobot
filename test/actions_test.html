@@ -102,6 +102,9 @@
                                                      'normal');
           new_state = actions.grobotAppReducer(new_state, add_item_action);
 
+          // The summary status level should be normal.
+          assert.equal('normal', new_state.actionPanel.summaryLevel);
+
           // Make sure it got added in the right place.
           assert.equal(1, new_state.actionPanel.numNormal);
           let got_item = new_state.actionPanel.items[0];
@@ -114,6 +117,9 @@
                                                  'warning');
           new_state = actions.grobotAppReducer(new_state, add_item_action);
 
+          // The summary status level should be warning.
+          assert.equal('warning', new_state.actionPanel.summaryLevel);
+
           // Make sure it got added in the right place.
           assert.equal(1, new_state.actionPanel.numWarning);
           got_item = new_state.actionPanel.items[1];
@@ -125,6 +131,9 @@
           add_item_action = actions.addPanelItem('Test', 'Test item',
                                                  'error');
           new_state = actions.grobotAppReducer(new_state, add_item_action);
+
+          // The summary status level should be error.
+          assert.equal('error', new_state.actionPanel.summaryLevel);
 
           // Make sure it got added in the right place.
           assert.equal(1, new_state.actionPanel.numError);

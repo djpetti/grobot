@@ -17,14 +17,16 @@
       <div class="card-content">
         <div class="status-header">System Status
           <div class="status-icon">
-            <iron-image class="icon" src="../images/icon_check.svg" alt="check">
+            <iron-image id="statusIcon", class="icon"
+                        src="../images/icon_check.svg" alt="check">
             </iron-image>
-            <span class="text-light">All systems nominal.</span>
+            <span id="statusText", class="text-light">All systems nominal.</span>
           </div>
         </div>
 
-        <p class="text-light">Your GroBot is functioning normally. See below
-                              for details.</p>
+        <p class="text-light" id="description">
+          Your GroBot is functioning normally. See below for details.
+        </p>
 
         <paper-listbox>
           <slot></slot>

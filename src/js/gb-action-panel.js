@@ -9,6 +9,7 @@ gbActionPanel.create = function() {
     ready: gbActionPanel.ready_,
 
     addItem: gbActionPanel.addItem_,
+    updatePanelTop: gbActionPanel.updatePanelTop_,
   });
 };
 
@@ -75,3 +76,42 @@ gbActionPanel.addItem_ = function(title, description, level) {
 
   return item;
 };
+
+/** Updates the messages at the top of the action panel based on what items are
+ * present.
+ * @param panelState The action panel part of the state.
+ * @private */
+gbActionPanel.updatePanelTop_ = function(panelState) {
+  // Update the summary based on the current state.
+  switch (panelState.summaryLevel) {
+    case 'error':
+      // We have errors.
+      this.$.statusText.textContent = 'Action required!';
+      this.$.description.textContent = 'Uh oh! It looks like there are' +
+                                          ' some problems with your GroBot.';
+
+      // Change the icon to an error icon.
+      this.$.statusIcon.src = gbActionPanelItem.ICON_URLS['error'];
+      break;
+
+    case 'warning':
+      // We have warnings.
+      this.$.statusText.textContent = 'Action suggested.';
+      this.$.description.textContent = 'Your GroBot may need some maintenence.' +
+                                       ' See below for details.';
+
+      // Change the icon to a warning icon.
+      this.$.statusIcon.src = gbActionPanelItem.ICON_URLS['warning'];
+      break;
+
+    case 'normal':
+      // Normal status.
+      this.$.statusText.textContent = 'All systems nominal.';
+      this.$.description.textContent = 'Your GroBot is functioning normally.' +
+                                       ' See below for details.';
+
+      // Change the icon to a check mark.
+      this.$.statusIcon.src = gbActionPanelItem.ICON_URLS['normal'];
+      break;
+  }
+}

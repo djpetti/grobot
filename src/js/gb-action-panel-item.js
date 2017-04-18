@@ -21,11 +21,10 @@ gbActionPanelItem.create = function() {
 };
 
 /** Maps icons to their source urls.
- * @private
  */
-ICON_URLS_ = {normal: "../images/icon_check.svg",
-              warning: "../images/icon_warning.svg",
-              error: "../images/icon_error.svg"}
+gbActionPanelItem.ICON_URLS = {normal: "../images/icon_check.svg",
+                               warning: "../images/icon_warning.svg",
+                               error: "../images/icon_error.svg"}
 
 /** Gets the title of the action panel item.
  * @returns The title of the item. */
@@ -65,6 +64,6 @@ gbActionPanelItem.setDescription_ = function(description) {
  */
 gbActionPanelItem.setLevel_ = function(level) {
   // Set the icon correctly.
-  this.$.icon.src = ICON_URLS_[level];
+  this.$.icon.src = gbActionPanelItem.ICON_URLS[level];
   this.level_ = level;
 };
