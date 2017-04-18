@@ -8,6 +8,7 @@ import sys
 import unittest
 
 from backend import server
+from backend.mcu_sim import psoc
 
 
 """ Script to manage building and testing the web application. """
@@ -58,8 +59,7 @@ def run_js_tests():
   # Get the directory this module is in.
   dir_path = os.path.dirname(os.path.realpath(__file__))
   # Run intern-client directly.
-  retcode = subprocess.call(["intern-client", "config=test/intern"],
-                            cwd=dir_path)
+  retcode = subprocess.call(["polymer", "test"], cwd=dir_path)
   if retcode:
     return False
   return True
@@ -82,6 +82,10 @@ def main():
                       help="Rebuild polymer app and serve from build/bundled.")
   parser.add_argument("-t", "--test-only", action="store_true",
                       help="Only run the tests and nothing else.")
+  parser.add_argument("-m", "--mcu_simulation", action="store_true",
+                      help="Run with simulated MCU.")
+  parser.add_argument("-f", "--force", action="store_true",
+                      help="Continue even if the tests fail.")
   args = parser.parse_args()
 
   # Build the polymer app.
@@ -91,13 +95,23 @@ def main():
 
   # Run the tests.
   if not run_all_tests():
-    print("ERROR: Tests failed, not continuing.")
-    sys.exit(1)
+    if not args.force:
+      print("ERROR: Tests failed, not continuing.")
+      sys.exit(1)
+    else:
+      print("WARNING: Tests failed, but continuing anyway.")
 
   # Run the dev server.
   if not args.test_only:
     print("Starting dev server...")
-    server.main(dev_mode=(not args.production))
+
+    # Enable MCU simulation if necessary.
+    settings = {}
+    if args.mcu_simulation:
+      sim = psoc.Psoc()
+      settings["mcu_serial"] = sim.get_device_name()
+
+    server.main(dev_mode=(not args.production), override_settings=settings)
 
 
 if __name__ == "__main__":

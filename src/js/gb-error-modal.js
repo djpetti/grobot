@@ -11,12 +11,12 @@ gbErrorModal.create = function() {
       opened: {
         type: Boolean,
         value: false,
-        observer: '_openedChanged',
-        statePath: 'errorModalOpened',
+        observer: 'openedChanged_',
+        statePath: 'fromBackend.errorModalOpened',
       }
     },
 
-    _openedChanged: function(newValue, oldValue) {
+    openedChanged_: function(newValue, oldValue) {
       this.$.errorDialog.opened = newValue;
     },
   });

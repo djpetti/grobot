@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, user-scalable=yes">
+
+    <title>test_el-element test</title>
+
+    <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+    <script src="../../web-component-tester/browser.js"></script>
+    <script src="../bower_components/polymer-redux/polymer-redux.js"></script>
+    <script src="../bower_components/redux/index.js"></script>
+    <script src="../src/js/actions.js"></script>
+    <script src="../src/js/main.js"></script>
+
+    <link rel="import" href="../src/gb-action-panel.html">
+  </head>
+  <body>
+    <test-fixture id="gbActionFixture">
+      <template>
+        <!-- This will be replaced with our fake action panel for testing. -->
+        <gb-action-panel></gb-action-panel>
+      </template>
+    </test-fixture>
+
+    <script>
+      suite('actions.js', function() {
+				setup(function() {
+				  // Implements a fake action panel that allows us to add stuff.
+				  stub('gb-action-panel', {
+            /** Adds an item to the fake action panel.
+             * @param title The title of the item.
+             * @param description The description of the item.
+             * @param level The level of the item.
+             * @returns The item that it added, which in this case is just an
+             * object instead of a DOM node. */
+				    addItem: function(title, description, level) {
+				      return {title, description, level};
+				    },
+				  });
+
+          // Use the stub instead of the actual one.
+				  replace('gb-action-panel').with('fake-gb-action-panel');
+				});
+
+        test('an unknown action does not result in a state change',
+             function(done) {
+          // Empty action.
+          const state = actions.initialState;
+          let new_state = actions.grobotAppReducer(state, 'BAD_ACTION');
+          // The state shouldn't have changed.
+          assert.deepEqual(state, new_state);
+
+          done();
+        });
+
+        test('the UPDATE_BACKEND_STATE action works',
+             function(done) {
+					// Create an initial state to start with.
+					const state = actions.initialState;
+					assert.isFalse(state.fromBackend.errorModalOpened);
+
+					// Now, create an action that should not change the state.
+					const alive_backend_state = {mcu_alive: true};
+					const alive_action = actions.updateBackendState(alive_backend_state);
+
+					// The state should remain the same.
+					let new_state = actions.grobotAppReducer(state, alive_action);
+					assert.deepEqual(state, new_state);
+
+					// Now, create an action that changes the state.
+					const dead_backend_state = {mcu_alive: false};
+					const dead_action = actions.updateBackendState(dead_backend_state);
+
+					// The state should change.
+					new_state = actions.grobotAppReducer(state, dead_action);
+					assert.notDeepEqual(state, new_state);
+					assert.isTrue(new_state.fromBackend.errorModalOpened);
+
+					// Change it back.
+					new_state = actions.grobotAppReducer(new_state, alive_action);
+					assert.deepEqual(state, new_state);
+
+          done();
+        });
+
+        test('the SET_ACTION_PANEL and ADD_PANEL_ITEM actions work',
+             function(done) {
+          // Get the testing panel.
+          let panel = fixture('gbActionFixture');
+
+          // Register as the action panel.
+          const register_action = actions.setActionPanel(panel);
+          const state = actions.initialState;
+          let new_state = actions.grobotAppReducer(state, register_action);
+
+          // Make sure it got registered.
+          assert.deepEqual(panel, new_state.actionPanel.actionPanel);
+
+          // Try adding an item.
+          let add_item_action = actions.addPanelItem('Test', 'Test item',
+                                                     'normal');
+          new_state = actions.grobotAppReducer(new_state, add_item_action);
+
+          // The summary status level should be normal.
+          assert.equal('normal', new_state.actionPanel.summaryLevel);
+
+          // Make sure it got added in the right place.
+          assert.equal(1, new_state.actionPanel.numNormal);
+          let got_item = new_state.actionPanel.items[0];
+          assert.equal('Test', got_item.title);
+          assert.equal('Test item', got_item.description);
+          assert.equal('normal', got_item.level);
+
+          // Try adding with warning level.
+          add_item_action = actions.addPanelItem('Test', 'Test item',
+                                                 'warning');
+          new_state = actions.grobotAppReducer(new_state, add_item_action);
+
+          // The summary status level should be warning.
+          assert.equal('warning', new_state.actionPanel.summaryLevel);
+
+          // Make sure it got added in the right place.
+          assert.equal(1, new_state.actionPanel.numWarning);
+          got_item = new_state.actionPanel.items[1];
+          assert.equal('Test', got_item.title);
+          assert.equal('Test item', got_item.description);
+          assert.equal('warning', got_item.level);
+
+          // Try adding with error level.
+          add_item_action = actions.addPanelItem('Test', 'Test item',
+                                                 'error');
+          new_state = actions.grobotAppReducer(new_state, add_item_action);
+
+          // The summary status level should be error.
+          assert.equal('error', new_state.actionPanel.summaryLevel);
+
+          // Make sure it got added in the right place.
+          assert.equal(1, new_state.actionPanel.numError);
+          got_item = new_state.actionPanel.items[2];
+          assert.equal('Test', got_item.title);
+          assert.equal('Test item', got_item.description);
+          assert.equal('error', got_item.level);
+
+          done();
+        });
+      });
+    </script>
+  </body>
+</html>

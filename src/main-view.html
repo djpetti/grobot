@@ -12,13 +12,11 @@
 <link rel="import" href="../bower_components/polymer/polymer.html">
 <link rel="import" href="../bower_components/neon-animation/animations/scale-up-animation.html">
 <link rel="import" href="../bower_components/neon-animation/animations/fade-out-animation.html">
+<link rel="import" href="gb-action-panel.html">
 <link rel="import" href="gb-error-modal.html">
 <link rel="import" href="shared-styles.html">
 
 <dom-module id="main-view">
-
-  <!-- System status card. -->
-
   <template>
     <style include="shared-styles">
       :host {
@@ -36,24 +34,7 @@
 
       .grouph:not([wide-layout]) {
         @apply(--layout-vertical);
-      }
-
-      .column-card {
-        @apply(--layout-self-start);
-        @apply(--layout-flex);
-
-        margin: 20px;
-        min-width: 500px;
-      }
-
-      .status-header {
-        @apply(--paper-font-headline);
-      }
-
-      .status-icon {
-        font-size: 18px;
-        vertical-align: middle;
-        float: right;
+        @apply(--layout-center);
       }
 
       .grow-icon {
@@ -62,21 +43,6 @@
         float: right;
         vertical-align: middle;
         margin-bottom: 10px;
-      }
-
-      .icon {
-        width: 30px;
-        height: 30px;
-        vertical-align: middle;
-        padding-right: 5px;
-      }
-
-      .text-light {
-        color: var(--paper-grey-600);
-      }
-
-      .status-item-title {
-        font-size: 20px;
       }
 
       .heading-white {
@@ -91,65 +57,14 @@
       }
     </style>
 
-    <iron-media-query query="(min-width: 900px)" query-matches="{{wide}}"></iron-media-query>
+    <iron-media-query query="(min-width: 1000px)" query-matches="{{wide}}"></iron-media-query>
     <div class="grouph" wide-layout$="[[wide]]">
 
-      <paper-card class="column-card">
-        <div class="card-content">
-          <div class="status-header">System Status
-            <div class="status-icon">
-              <img class="icon" src="../images/icon_error.svg" alt="error cross">
-              <span class="text-light">Action Required!</span>
-            </div>
-          </div>
-
-          <p class="text-light">Uh-oh! It looks like there are some problems
-                                with your GroBot.<br>See below for details.</p>
-
-          <paper-listbox>
-            <paper-item>
-              <paper-item-body two-line>
-                <div class="status-item-title">Water is low.</div>
-                <div class="text-light">Please add water to the system.</div>
-              </paper-item-body>
-              <paper-icon-item>
-                <img class="icon status-icon" src="../images/icon_error.svg" alt="error cross">
-              </paper-icon-item>
-            </paper-item>
-            <paper-item>
-              <paper-item-body two-line>
-                <div class="status-item-title">PH solution is low.</div>
-                <div class="text-light">Please refill the PH reservoir.</div>
-              </paper-item-body>
-              <paper-icon-item>
-                <img class="icon status-icon" src="../images/icon_error.svg" alt="error cross">
-              </paper-icon-item>
-            </paper-item>
-            <paper-item>
-              <paper-item-body two-line>
-                <div class="status-item-title">Ambient temperature is low.</div>
-                <div class="text-light">A warmer location is optimal for growing.</div>
-              </paper-item-body>
-              <paper-icon-item>
-                <img class="icon status-icon" src="../images/icon_warning.svg" alt="error cross">
-              </paper-icon-item>
-            </paper-item>
-            <paper-item>
-              <paper-item-body two-line>
-                <div class="status-item-title">System is running.</div>
-                <div class="text-light">Your GroBot is powered on and active.</div>
-              </paper-item-body>
-              <paper-icon-item>
-                <img class="icon status-icon" src="../images/icon_check.svg" alt="error cross">
-              </paper-icon-item>
-            </paper-item>
-          </paper-listbox>
-
-        </div>
-      </paper-card>
+      <gb-action-panel id="actionPanel"></gb-action-panel>
 
       <paper-card class="column-card heading-white" heading="Growing Progress"
-                  image="../images/plants-growing.svg" alt="Plants Growing">
+                  image="../images/plants-growing.svg" alt="Plants Growing"
+                  wide-layout$="[[wide]]">
         <div class="card-content">
           <paper-listbox>
             <paper-item>
@@ -159,7 +74,8 @@
                 <paper-progress class="grow-progress" value="60" min="0" max="100"></paper-progress>
               </paper-item-body>
               <paper-item-icon>
-                <img class="grow-icon" src="../images/icon_lettuce.svg" alt="lettuce icon">
+                <iron-image class="grow-icon" src="../images/icon_lettuce.svg" alt="lettuce icon">
+                </iron-image>
               </paper-item-icon>
             </paper-item>
             <paper-item>
@@ -169,7 +85,8 @@
                 <paper-progress class="grow-progress" value="10" min="0" max="100"></paper-progress>
               </paper-item-body>
               <paper-item-icon>
-                <img class="grow-icon" src="../images/icon_basil.svg" alt="basil icon">
+                <iron-image class="grow-icon" src="../images/icon_basil.svg" alt="basil icon">
+                </iron-image>
               </paper-item-icon>
             </paper-item>
             <paper-item>
@@ -179,7 +96,8 @@
                 <paper-progress class="grow-progress" value="35" min="0" max="100"></paper-progress>
               </paper-item-body>
               <paper-item-icon>
-                <img class="grow-icon" src="../images/icon_kale.svg" alt="kale icon">
+                <iron-image class="grow-icon" src="../images/icon_kale.svg" alt="kale icon">
+                </iron-image>
               </paper-item-icon>
             </paper-item>
           </paper-listbox>

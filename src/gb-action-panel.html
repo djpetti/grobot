@@ -1,0 +1,44 @@
+<link rel="import" href="../bower_components/paper-card/paper-card.html">
+<link rel="import" href="../bower_components/paper-listbox/paper-listbox.html">
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="gb-action-panel-item.html">
+<link rel="import" href="shared-styles.html">
+
+<dom-module id="gb-action-panel">
+  <template>
+    <style include="shared-styles">
+      .status-header {
+        @apply(--paper-font-headline);
+      }
+    </style>
+
+    <iron-media-query query="(min-width: 1000px)" query-matches="{{wide}}"></iron-media-query>
+    <paper-card class="column-card" wide-layout$="[[wide]]">
+      <div class="card-content">
+        <div class="status-header">System Status
+          <div class="status-icon">
+            <iron-image id="statusIcon", class="icon"
+                        src="../images/icon_check.svg" alt="check">
+            </iron-image>
+            <span id="statusText", class="text-light">All systems nominal.</span>
+          </div>
+        </div>
+
+        <p class="text-light" id="description">
+          Your GroBot is functioning normally. See below for details.
+        </p>
+
+        <paper-listbox>
+          <slot></slot>
+        </paper-listbox>
+
+      </div>
+    </paper-card>
+  </template>
+
+  <script src="js/gb-action-panel.js"></script>
+  <script>
+    gbActionPanel.create();
+  </script>
+
+</dom-module>
