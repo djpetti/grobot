@@ -1814,4 +1814,79 @@ F 3 "" H 4950 9600 50  0000 C CNN
 	1    4950 9600
 	1    0    0    -1  
 $EndComp
+Wire Wire Line
+	7850 7700 7850 7400
+Wire Wire Line
+	7850 7400 8000 7400
+Wire Wire Line
+	8000 7400 8000 6700
+Text Label 8000 6700 0    60   ~ 0
+BOOT0
+$Comp
+L R R?
+U 1 1 58F8C61C
+P 7750 6850
+F 0 "R?" V 7830 6850 50  0000 C CNN
+F 1 "10k" V 7750 6850 50  0000 C CNN
+F 2 "" V 7680 6850 50  0000 C CNN
+F 3 "" H 7750 6850 50  0000 C CNN
+	1    7750 6850
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	7900 6850 8000 6850
+Connection ~ 8000 6850
+$Comp
+L GND #PWR?
+U 1 1 58F8C7DB
+P 7500 6850
+F 0 "#PWR?" H 7500 6600 50  0001 C CNN
+F 1 "GND" H 7500 6700 50  0000 C CNN
+F 2 "" H 7500 6850 50  0000 C CNN
+F 3 "" H 7500 6850 50  0000 C CNN
+	1    7500 6850
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	7500 6850 7600 6850
+Text Label 9200 8650 0    60   ~ 0
+BTL_RX
+Wire Wire Line
+	9200 8650 9000 8650
+Text Label 9200 8750 0    60   ~ 0
+BTL_TX
+Wire Wire Line
+	9200 8750 9000 8750
+Text Label 8850 7550 0    60   ~ 0
+SBC_TX
+Wire Wire Line
+	8850 7550 8550 7550
+Wire Wire Line
+	8550 7550 8550 7700
+Wire Wire Line
+	8450 7700 8450 7400
+Wire Wire Line
+	8450 7400 8850 7400
+Text Label 8850 7400 0    60   ~ 0
+SBC_RX
+Text Label 7750 10200 0    60   ~ 0
+LCD_TX
+Wire Wire Line
+	7750 10200 8250 10200
+Wire Wire Line
+	8250 10200 8250 9700
+Text Label 7750 10300 0    60   ~ 0
+LCD_RX
+Wire Wire Line
+	7750 10300 8350 10300
+Wire Wire Line
+	8350 10300 8350 9700
+Text Label 9200 8550 0    60   ~ 0
+CAN_RX
+Wire Wire Line
+	9200 8550 9000 8550
+Text Label 9200 8450 0    60   ~ 0
+CAN_TX
+Wire Wire Line
+	9200 8450 9000 8450
 $EndSCHEMATC
