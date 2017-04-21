@@ -1,4 +1,4 @@
-update=Thu 20 Apr 2017 01:56:13 PM EDT
+update=Thu 20 Apr 2017 09:51:20 PM EDT
 version=1
 last_client=kicad
 [pcbnew]
@@ -58,7 +58,7 @@ LibName26=opto
 LibName27=atmel
 LibName28=contrib
 LibName29=valves
-LibName30=custom_lib/psoc
-LibName31=custom_lib/stm
-LibName32=custom_lib/power_reg
-LibName33=custom_lib/can
+LibName30=/home/daniel/git/grobot/schematics/custom_lib/can
+LibName31=/home/daniel/git/grobot/schematics/custom_lib/power_reg
+LibName32=/home/daniel/git/grobot/schematics/custom_lib/psoc
+LibName33=/home/daniel/git/grobot/schematics/custom_lib/stm
