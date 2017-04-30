@@ -3,6 +3,7 @@
 
 import argparse
 import os
+import shutil
 import subprocess
 import sys
 import time
@@ -95,7 +96,25 @@ def setup_container():
     print("ERROR: Xvfb terminated unexpectedly!")
     sys.exit(1)
 
+  # Link to our installed bower dependencies. (We'll restore the actual one
+  # later.)
+  if os.path.exists("bower_components"):
+    shutil.move("bower_components", "bower_components-user")
+  os.symlink("/bower_components", "bower_components")
+
   return xvfb
+
+def teardown_container(xvfb):
+  """ Tears down the container after testing.
+  Args:
+    xvfb: The Xvfb process that we started for testing. """
+  # We're done with this now.
+  xvfb.terminate()
+
+  # Move the user bower components back.
+  os.remove("bower_components")
+  if os.path.exists("bower_components-user"):
+    shutil.move("bower_components-user", "bower_components")
 
 def main():
   parser = argparse.ArgumentParser( \
@@ -130,8 +149,8 @@ def main():
     else:
       print("WARNING: Tests failed, but continuing anyway.")
 
-  # Stop xvfb once the tests are over.
-  xvfb.terminate()
+  if args.containerized:
+    teardown_container(xvfb)
 
   # Run the dev server.
   if not args.test_only:
