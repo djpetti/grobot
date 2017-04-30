@@ -1,4 +1,4 @@
-update=Thu 20 Apr 2017 09:49:50 PM EDT
+update=Thu 27 Apr 2017 09:28:15 PM EDT
 version=1
 last_client=kicad
 [pcbnew]
@@ -62,3 +62,4 @@ LibName30=/home/daniel/git/grobot/schematics/custom_lib/can
 LibName31=/home/daniel/git/grobot/schematics/custom_lib/power_reg
 LibName32=/home/daniel/git/grobot/schematics/custom_lib/psoc
 LibName33=/home/daniel/git/grobot/schematics/custom_lib/stm
+LibName34=/home/daniel/git/grobot/schematics/custom_lib/amp
