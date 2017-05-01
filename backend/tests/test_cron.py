@@ -1,5 +1,6 @@
 import logging
 import os
+import time
 
 import tornado.ioloop
 
@@ -73,5 +74,11 @@ class CheckMcuAliveJobTest(test_serial.SerialTalkerTestBase):
     # Wait for it to ping again.
     self.wait()
 
-    # The state should be good again.
-    self.assertTrue(state.get_state().get("mcu_alive"))
+    # The state should be good again eventually, however, it might take some
+    # time for it to receive our message. Give it a second.
+    for i in range(0, 100):
+      if state.get_state().get("mcu_alive"):
+        break
+      time.sleep(0.01)
+    else:
+      self.fail("MCU state did not change to alive.")

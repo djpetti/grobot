@@ -3,8 +3,10 @@
 
 import argparse
 import os
+import shutil
 import subprocess
 import sys
+import time
 import unittest
 
 from backend import server
@@ -74,6 +76,45 @@ def run_all_tests():
     return False
   return True
 
+def setup_container():
+  """ Run setup for containerized deployment.
+  Returns:
+    Handle to xvfb process. """
+  print("Starting xvfb...")
+
+  # The DISPLAY variable should be set in the container.
+  display = os.environ["DISPLAY"]
+
+  # Initialize xvfb.
+  xvfb = subprocess.Popen(["Xvfb", display, "-ac", "-screen", "0",
+                           "1920x1080x24"])
+
+  # Give it a second to start.
+  time.sleep(0.5)
+  if xvfb.poll():
+    # It terminated prematurely.
+    print("ERROR: Xvfb terminated unexpectedly!")
+    sys.exit(1)
+
+  # Link to our installed bower dependencies. (We'll restore the actual one
+  # later.)
+  if os.path.exists("bower_components"):
+    shutil.move("bower_components", "bower_components-user")
+  os.symlink("/bower_components", "bower_components")
+
+  return xvfb
+
+def teardown_container(xvfb):
+  """ Tears down the container after testing.
+  Args:
+    xvfb: The Xvfb process that we started for testing. """
+  # We're done with this now.
+  xvfb.terminate()
+
+  # Move the user bower components back.
+  os.remove("bower_components")
+  if os.path.exists("bower_components-user"):
+    shutil.move("bower_components-user", "bower_components")
 
 def main():
   parser = argparse.ArgumentParser( \
@@ -86,12 +127,19 @@ def main():
                       help="Run with simulated MCU.")
   parser.add_argument("-f", "--force", action="store_true",
                       help="Continue even if the tests fail.")
+  parser.add_argument("-c", "--containerized", action="store_true",
+                      help="Use this when running in a container.")
   args = parser.parse_args()
 
   # Build the polymer app.
   if args.production:
     print("Building polymer app...")
     build_polymer_app()
+
+  # Initialize stuff for the container.
+  xvfb = None
+  if args.containerized:
+    xvfb = setup_container()
 
   # Run the tests.
   if not run_all_tests():
@@ -100,6 +148,9 @@ def main():
       sys.exit(1)
     else:
       print("WARNING: Tests failed, but continuing anyway.")
+
+  if args.containerized:
+    teardown_container(xvfb)
 
   # Run the dev server.
   if not args.test_only:
