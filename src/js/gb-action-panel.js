@@ -9,6 +9,7 @@ gbActionPanel.create = function() {
     ready: gbActionPanel.ready_,
 
     addItem: gbActionPanel.addItem_,
+    removeItem: gbActionPanel.removeItem_,
     updatePanelTop: gbActionPanel.updatePanelTop_,
   });
 };
@@ -76,6 +77,14 @@ gbActionPanel.addItem_ = function(title, description, level) {
 
   return item;
 };
+
+/** Removes an item from the action panel.
+ * @private
+ * @param item The node to remove from the panel. */
+gbActionPanel.removeItem_ = function(item) {
+  let panel = Polymer.dom(this);
+  panel.removeChild(item);
+}
 
 /** Updates the messages at the top of the action panel based on what items are
  * present.
