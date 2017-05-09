@@ -128,16 +128,18 @@
           return true;
         };
 
-        test('instantiating the element works', function() {
+        test('instantiating the element works', function(done) {
           assert.equal(element.is, 'gb-action-panel');
 
           // Make sure we dispatched the SET_ACTION_PANEL action on creation.
           assert.equal(1, dispatchedActions.length);
           assert.equal(dispatchedActions[0].type, actions.SET_ACTION_PANEL);
           assert.equal(element, dispatchedActions[0].actionPanel);
+
+          done();
         });
 
-        test('added elements are there and in correct order', function() {
+        test('added elements are there and in correct order', function(done) {
           // No items initially...
           checkOrder_(0);
 
@@ -167,9 +169,11 @@
           // Try adding another normal element.
           addItem_('Normal 2', 'Test item', 'normal');
           checkOrder_(6);
+
+          done();
         });
 
-        test('a corner case: add warning with no errors', function() {
+        test('a corner case: add warning with no errors', function(done) {
           // No items initially...
           checkOrder_(0);
 
@@ -180,9 +184,11 @@
           // Add a warning item and check the ordering.
           addItem_('Warning', 'Test item', 'warning');
           checkOrder_(2);
+
+          done();
         });
 
-        test('a corner case: add warning with no normal items', function() {
+        test('a corner case: add warning with no normal items', function(done) {
           // No items initially...
           checkOrder_(0);
 
@@ -193,6 +199,8 @@
           // Add a warning item.
           addItem_('Warning', 'Test item', 'warning');
           checkOrder_(2);
+
+          done();
         });
       });
     </script>
