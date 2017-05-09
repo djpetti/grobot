@@ -59,13 +59,14 @@
          * @private
          * @param title The title of the item.
          * @param description The description of the item.
-         * @param The level of the item.
+         * @param level The level of the item.
+         * @param id A unique ID for the item.
          * @returns The added item node. */
-        addItem_ = function(title, description, level) {
-          const item = element.addItem(title, description, level);
+        addItem_ = function(title, description, level, id) {
+          const item = element.addItem(title, description, level, id);
 
           // Add to the fake state.
-          fakeState.actionPanel.items.push(item);
+          fakeState.actionPanel.items[id] = item;
           switch (level) {
             case 'normal':
               ++fakeState.actionPanel.numNormal;
@@ -82,6 +83,17 @@
           }
 
           return item;
+        };
+
+        /** Helper function that removes an item from the action panel, and
+         * updates the fake Redux state accordingly.
+         * @private
+         * @param id The unique ID of the item to remove. */
+        removeItem_ = function(id) {
+          // First, get the node, which should already be set in the fake state.
+          const node = fakeState.actionPanel.items[id];
+          // Now, remove the node.
+          element.removeItem(node);
         };
 
         /** Helper function that ensures that items are correctly sorted by
@@ -144,30 +156,30 @@
           checkOrder_(0);
 
           // Try adding an item to the panel.
-          addItem_('Test', 'Test item', 'normal');
+          addItem_('Test', 'Test item', 'normal', 't1');
           // We should end up with a new element in the dom.
           checkOrder_(1);
 
           // Try adding an error element, which should go above it.
-          addItem_('Error', 'Test item', 'error');
+          addItem_('Error', 'Test item', 'error', 't2');
           assert.equal(2, Polymer.dom(element).children.length);
           // Check the ordering.
           checkOrder_(2);
 
           // Try adding a warning element, which should go in between.
-          addItem_('Warning', 'Test item', 'warning');
+          addItem_('Warning', 'Test item', 'warning', 't3');
           checkOrder_(3);
 
           // Try adding another warning element.
-          addItem_('Warning 2', 'Test item', 'warning');
+          addItem_('Warning 2', 'Test item', 'warning', 't4');
           checkOrder_(4);
 
           // Try adding another error element.
-          addItem_('Error 2', 'Test item', 'error');
+          addItem_('Error 2', 'Test item', 'error', 't5');
           checkOrder_(5);
 
           // Try adding another normal element.
-          addItem_('Normal 2', 'Test item', 'normal');
+          addItem_('Normal 2', 'Test item', 'normal', 't6');
           checkOrder_(6);
 
           done();
@@ -178,11 +190,11 @@
           checkOrder_(0);
 
           // Add a normal item.
-          addItem_('Test', 'Test item', 'normal');
+          addItem_('Test', 'Test item', 'normal', 't1');
           checkOrder_(1);
 
           // Add a warning item and check the ordering.
-          addItem_('Warning', 'Test item', 'warning');
+          addItem_('Warning', 'Test item', 'warning', 't2');
           checkOrder_(2);
 
           done();
@@ -193,12 +205,32 @@
           checkOrder_(0);
 
           // Add an error item.
-          addItem_('Error', 'Test item', 'error');
+          addItem_('Error', 'Test item', 'error', 't1');
           checkOrder_(1);
 
           // Add a warning item.
-          addItem_('Warning', 'Test item', 'warning');
+          addItem_('Warning', 'Test item', 'warning', 't2');
           checkOrder_(2);
+
+          done();
+        });
+
+        test('we can remove action panel items', function(done) {
+          // No items initially...
+          checkOrder_(0);
+
+          // Add some items.
+          addItem_('Test', 'Test item', 'normal', 't1');
+          addItem_('Warning', 'Test item', 'warning', 't2');
+          checkOrder_(2);
+
+          // Remove one of them.
+          removeItem_('t1');
+          checkOrder_(1);
+
+          // Remove the other too.
+          removeItem_('t2');
+          checkOrder_(0);
 
           done();
         });

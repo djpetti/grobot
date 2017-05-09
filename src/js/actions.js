@@ -5,6 +5,8 @@ actions = {};
 actions.UPDATE_BACKEND_STATE = 'UPDATE_BACKEND_STATE';
 // Adds a new item to the action panel.
 actions.ADD_PANEL_ITEM = 'ADD_PANEL_ITEM';
+// Removes an item from the action panel.
+actions.REMOVE_PANEL_ITEM = 'REMOVE_PANEL_ITEM';
 // Sets the core action panel object in the state.
 actions.SET_ACTION_PANEL = 'SET_ACTION_PANEL';
 
@@ -20,11 +22,19 @@ actions.updateBackendState = function(state) {
  * @param title The title of the item.
  * @param description The description of the item.
  * @param level The level of the item.
+ * @param id A unique ID that will be used to identify this item.
  * @returns The created action.
  */
-actions.addPanelItem = function(title, description, level) {
-  return {type: actions.ADD_PANEL_ITEM, title, description, level};
+actions.addPanelItem = function(title, description, level, id) {
+  return {type: actions.ADD_PANEL_ITEM, title, description, level, id};
 };
+
+/** Action creator that creates a REMOVE_PANEL_ITEM.
+ * @param id The unique ID of the item, specified at creation time.
+ */
+actions.removePanelItem = function(id) {
+  return {type: actions.REMOVE_PANEL_ITEM, id};
+}
 
 /** Action creator that creates a SET_ACTION_PANEL.
  * @param actionPanel The action panel node.
@@ -47,7 +57,7 @@ actions.initialState = {
     // Singleton action panel for the main view.
     actionPanel: null,
     // What items are currently visible in the action panel.
-    items: [],
+    items: {},
 
     // How many of each type of item there are.
     numError: 0,
@@ -83,13 +93,15 @@ actions.fromBackendReducer_ = function(state = {}, action) {
  * @returns The new state.
  */
 actions.actionPanelReducer_ = function(state = {}, action) {
+  let new_state = Object.assign({}, state);
+  let panel = null;
+
   switch (action.type) {
     case actions.SET_ACTION_PANEL:
-      return Object.assign({}, state, {actionPanel: action.actionPanel});
+      new_state.actionPanel = action.actionPanel;
+      return new_state;
 
     case actions.ADD_PANEL_ITEM:
-      var new_state = Object.assign({}, state)
-
       switch (action.level) {
         case 'normal':
           ++new_state.numNormal;
@@ -115,20 +127,56 @@ actions.actionPanelReducer_ = function(state = {}, action) {
         new_state.summaryLevel = 'normal';
       }
 
-      // Add the actual item to the DOM.
-      let panel = state.actionPanel;
+      panel = state.actionPanel;
       if (!panel) {
         console.error('actionPanel not set in Redux state!');
         // We can't really update the state reasonably in this case.
         return state;
       }
 
+      // Add the actual item to the DOM.
       let node = panel.addItem(action.title, action.description, action.level);
       // Update the summary panel.
       panel.updatePanelTop(new_state);
-      new_state.items.push(node);
+      // Make it accessible by ID.
+      new_state.items[action.id] = node;
 
       return new_state;
+
+    case actions.REMOVE_PANEL_ITEM:
+      panel = state.actionPanel;
+      if (!panel) {
+        console.error('actionPanel not set in Redux state!');
+        // We can't really update the state reasonably in this case.
+        return state;
+      }
+
+      // Get the item with that ID.
+      let to_remove = new_state.items[action.id];
+      const level = to_remove.getLevel();
+
+      // Decrement the level counters appropriately.
+      switch (level) {
+        case 'normal':
+          --new_state.numNormal;
+          break;
+        case 'warning':
+          --new_state.numWarning;
+          break;
+        case 'error':
+          --new_state.numError;
+          break;
+        default:
+          console.error('Unknown action type: ' + action.level);
+          return state;
+      }
+
+      // Remove the item from the panel.
+      panel.removeItem(to_remove);
+      // Remove the item in the state.
+      delete new_state.items[action.id]
+
+      return new_state
 
     default:
       return state
