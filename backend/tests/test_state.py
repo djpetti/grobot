@@ -34,6 +34,22 @@ class StateTest(base_test.BaseTest):
     my_state.set("test_key", 1)
     self.assertEqual(1, my_state.get("test_key"))
 
+  def test_callbacks(self):
+    """ Tests that state callbacks work. """
+    def test_callback(state):
+      """ Simple callback for state testing.
+      Args:
+        state: The new state dictionary. """
+      self.assertEqual(1, state["test_key"])
+      self.stop()
+
+    my_state = state.get_state()
+
+    # Add the callback.
+    my_state.add_callback(test_callback)
+    # It should get run when we change the state.
+    my_state.set("test_key", 1)
+
 class StateTestWithWebsocket(base_test.BaseWebSocketTest):
   """ Tests for the state class that integrate with websockets. """
 
