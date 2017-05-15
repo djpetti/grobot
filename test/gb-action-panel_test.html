@@ -13,6 +13,8 @@
     <script src="../src/js/actions.js"></script>
     <script src="../src/js/main.js"></script>
 
+    <script src="fake_redux.js"></script>
+
     <link rel="import" href="../src/gb-action-panel.html">
     <link rel="import" href="../src/gb-action-panel-item.html">
   </head>
@@ -25,30 +27,9 @@
 
     <script>
       suite('<gb-action-panel>', function() {
-        // Mock Redux state for testing.
-        fakeState = actions.initialState;
-        // Any actions dispatched to the fake state.
-        dispatchedActions = [];
-        element = null;
-
         setup(function() {
-          // We're going to mock our Redux store.
-          main.getReduxStore = function() {
-            return {
-              /** Get the fake state.
-               * @returns The fake state. */
-              getState: function() {
-                return fakeState
-              },
-
-              /** Save actions, so we can verify that they happen, but don't
-              /* change the state. (We'll do that manually.)
-              /* @param action The action that we are dispatching. */
-              dispatch: function(action) {
-                dispatchedActions.push(action);
-              },
-            };
-          };
+          // Initialize mock Redux state for testing.
+          fakeRedux.store.initFakeState();
 
           // This only works in the setup() function...
           element = fixture('gbActionPanelFixture');
@@ -64,6 +45,7 @@
          * @returns The added item node. */
         addItem_ = function(title, description, level, id) {
           const item = element.addItem(title, description, level, id);
+          let fakeState = main.getReduxStore().getState();
 
           // Add to the fake state.
           fakeState.actionPanel.items[id] = item;
@@ -82,6 +64,8 @@
               break;
           }
 
+          main.getReduxStore().setState(fakeState);
+
           return item;
         };
 
@@ -91,7 +75,7 @@
          * @param id The unique ID of the item to remove. */
         removeItem_ = function(id) {
           // First, get the node, which should already be set in the fake state.
-          const node = fakeState.actionPanel.items[id];
+          const node = main.getReduxStore().getState().actionPanel.items[id];
           // Now, remove the node.
           element.removeItem(node);
         };
@@ -142,6 +126,7 @@
 
         test('instantiating the element works', function(done) {
           assert.equal(element.is, 'gb-action-panel');
+          const dispatchedActions = main.getReduxStore().getDispatchedActions();
 
           // Make sure we dispatched the SET_ACTION_PANEL action on creation.
           assert.equal(1, dispatchedActions.length);
