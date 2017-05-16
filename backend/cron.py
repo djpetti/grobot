@@ -45,6 +45,8 @@ class CheckMcuAliveJob(Job):
     Args:
       See superclass documentation.
       serial: The SerialTalker instance to use for communicating with the MCU.
+      ioloop: The ioloop instance to use. If not specified, uses the default
+              one.
     """
     self.__serial = serial
     # Add a callback for MCU messages.

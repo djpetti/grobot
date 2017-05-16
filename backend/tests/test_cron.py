@@ -2,7 +2,9 @@ import logging
 import os
 import time
 
+import tornado.gen
 import tornado.ioloop
+import tornado.testing
 
 from . import test_serial
 from .. import cron
@@ -22,6 +24,8 @@ class CheckMcuAliveJobTest(test_serial.SerialTalkerTestBase):
   def setUp(self):
     super().setUp()
 
+    self.__got_state_change = False
+
     # Create job for testing.
     self.__job = cron.CheckMcuAliveJob(1, self._serial_talker,
                                        ioloop=self.io_loop)
@@ -31,6 +35,25 @@ class CheckMcuAliveJobTest(test_serial.SerialTalkerTestBase):
 
     # Force it to clean up before the test ends.
     self.__job.stop()
+
+  def __wait_for_state_change(self, key, expected, timeout=5):
+    """ Waits for the state to change.
+    Args:
+      key: The key to check.
+      expected: The expected value of the key.
+      timeout: How many ping cycles to wait before giving up. """
+    # Wait for a state change.
+    self.__got_state_change = False
+    for i in range(0, timeout):
+      self.wait()
+      if self.__got_state_change:
+        # Check it.
+        self.assertEqual(expected, state.get_state().get(key))
+        break
+
+    else:
+      # Give up.
+      self.fail("State change did not happen.")
 
   def test_ping_gets_called(self):
     """ Tests that it actually sends a ping. """
@@ -55,6 +78,13 @@ class CheckMcuAliveJobTest(test_serial.SerialTalkerTestBase):
       self._wait_for_serial("<PING/12>")
       self.stop()
 
+    def state_change(state):
+      """ Fired when the state changes. """
+      self.__got_state_change = True
+      self.stop()
+
+    # Add a state callback that fires when the state changes.
+    state.get_state().add_callback(state_change)
     # Set the handler.
     self.io_loop.add_handler(self._conn, receive_message,
                              tornado.ioloop.IOLoop.READ)
@@ -62,23 +92,12 @@ class CheckMcuAliveJobTest(test_serial.SerialTalkerTestBase):
     # The state should be good initially.
     self.assertTrue(state.get_state().get("mcu_alive"))
 
-    # Wait for it to ping twice. It should now say that the MCU is not
-    # responding.
-    self.wait()
-    self.wait()
-    self.assertFalse(state.get_state().get("mcu_alive"))
+    # Wait for change the state. It should now say that
+    # the MCU is not responding.
+    self.__wait_for_state_change("mcu_alive", False)
 
     # Write a response.
     os.write(self._conn, "<PING/21/ack>".encode("utf8"))
 
-    # Wait for it to ping again.
-    self.wait()
-
-    # The state should be good again eventually, however, it might take some
-    # time for it to receive our message. Give it a second.
-    for i in range(0, 100):
-      if state.get_state().get("mcu_alive"):
-        break
-      time.sleep(0.01)
-    else:
-      self.fail("MCU state did not change to alive.")
+    # Wait for the state to change to true.
+    self.__wait_for_state_change("mcu_alive", True)
