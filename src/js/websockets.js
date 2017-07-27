@@ -45,7 +45,29 @@ websockets.Backend = class {
 
       default:
         // Not a known message type.
-        console.log('Not handling unknown message type: ' + message.type)
+        console.error('Not handling unknown message type: ' + message.type)
     };
+
+    // Perform any necessary updates to other components after the state change.
+    this.updateAfterStateChange_();
+  }
+
+  /** Updates any components that need to be updated after the state changes.
+   @private */
+  updateAfterStateChange_() {
+    let store = main.getReduxStore();
+    const backendState = store.getState().fromBackend;
+
+    // Update the action panel.
+    if (!backendState.mcuAlive) {
+      // If the MCU is dead, we want to show a message on the action panel about
+      // it.
+      const message = gbActionPanelMessages.mcuNotResponding;
+      const deadAction = actions.addPanelItem(message.title,
+                                              message.description,
+                                              message.level,
+                                              message.id);
+      store.dispatch(deadAction);
+    }
   }
 };

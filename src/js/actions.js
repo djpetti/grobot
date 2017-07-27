@@ -48,8 +48,8 @@ actions.setActionPanel = function(actionPanel) {
 actions.initialState = {
   // State from the backend that's synchronized to us.
   fromBackend: {
-    // Whether the error modal is currently open.
-    errorModalOpened: false,
+    // Whether the MCU is currently active.
+    mcuAlive: true,
   },
 
   // Action panel data.
@@ -78,8 +78,8 @@ actions.initialState = {
 actions.fromBackendReducer_ = function(state = {}, action) {
   switch (action.type) {
     case actions.UPDATE_BACKEND_STATE:
-      let showErrorModal = !action.state.mcu_alive;
-      return Object.assign({}, state, {errorModalOpened: showErrorModal});
+      const mcuAlive = action.state.mcu_alive;
+      return Object.assign({}, state, {mcuAlive: mcuAlive});
 
     default:
       return state;

@@ -84,7 +84,7 @@
              function(done) {
 					// Create an initial state to start with.
 					const state = actions.initialState;
-					assert.isFalse(state.fromBackend.errorModalOpened);
+					assert.isTrue(state.fromBackend.mcuAlive);
 
 					// Now, create an action that should not change the state.
 					const alive_backend_state = {mcu_alive: true};
@@ -101,7 +101,7 @@
 					// The state should change.
 					new_state = actions.grobotAppReducer(state, dead_action);
 					assert.notDeepEqual(state, new_state);
-					assert.isTrue(new_state.fromBackend.errorModalOpened);
+					assert.isFalse(new_state.fromBackend.mcuAlive);
 
 					// Change it back.
 					new_state = actions.grobotAppReducer(new_state, alive_action);
