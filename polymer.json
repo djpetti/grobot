@@ -10,7 +10,7 @@
    "images/**/*",
    "bower.json"
   ],
-  "includeDependencies": [
+  "extraDependencies": [
     "manifest.json",
     "bower_components/!(*test*)/*.{js,css,html}",
     "bower_components/!(*test*)/!(test|demo)/*.{js,css,html}",
