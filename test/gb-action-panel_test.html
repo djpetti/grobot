@@ -27,6 +27,8 @@
 
     <script>
       suite('<gb-action-panel>', function() {
+        var element = null;
+
         setup(function() {
           // Initialize mock Redux state for testing.
           fakeRedux.store.initFakeState();
