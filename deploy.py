@@ -52,27 +52,36 @@ def run_python_tests():
 
   return True
 
-def run_js_tests():
+def run_js_tests(keep_open=False):
   """ Runs the JavaScript tests.
+  Args:
+    keep_open: Whether to keep browsers open after running tests.
   Returns:
     True if the tests all succeed, False if there are failures. """
   print("Starting JS tests...")
 
   # Get the directory this module is in.
   dir_path = os.path.dirname(os.path.realpath(__file__))
-  # Run intern-client directly.
-  retcode = subprocess.call(["polymer", "test"], cwd=dir_path)
+
+  # Run polymer tests directly.
+  test_command = ["polymer", "test"]
+  if keep_open:
+    test_command.append("-p")
+  retcode = subprocess.call(test_command, cwd=dir_path)
+
   if retcode:
     return False
   return True
 
-def run_all_tests():
+def run_all_tests(keep_open=False):
   """ Runs all the tests.
+  Args:
+    keep_open: Whether to keep browsers open after running JS tests.
   Returns:
     True if the tests all succeed, False if there are failures. """
   if not run_python_tests():
     return False
-  if not run_js_tests():
+  if not run_js_tests(keep_open=keep_open):
     return False
   return True
 
@@ -129,6 +138,8 @@ def main():
                       help="Continue even if the tests fail.")
   parser.add_argument("-c", "--containerized", action="store_true",
                       help="Use this when running in a container.")
+  parser.add_argument("-k", "--keep_open", action="store_true",
+                      help="Keep browsers open after running tests.")
   args = parser.parse_args()
 
   # Build the polymer app.
@@ -142,7 +153,7 @@ def main():
     xvfb = setup_container()
 
   # Run the tests.
-  if not run_all_tests():
+  if not run_all_tests(args.keep_open):
     if not args.force:
       print("ERROR: Tests failed, not continuing.")
       sys.exit(1)
