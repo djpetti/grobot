@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, user-scalable=yes">
+
+    <title>test_el-element test</title>
+
+    <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+    <script src="../../web-component-tester/browser.js"></script>
+    <script src="../bower_components/polymer-redux/polymer-redux.js"></script>
+    <script src="../bower_components/redux/index.js"></script>
+    <script src="../src/js/actions.js"></script>
+    <script src="../src/js/gb-action-panel-messages.js"></script>
+    <script src="../src/js/main.js"></script>
+    <script src="../src/js/websockets.js"></script>
+
+    <script src="fake_redux.js"></script>
+
+    <link rel="import" href="../src/gb-action-panel.html">
+  </head>
+  <body>
+    <script>
+      suite('actions.js', function() {
+        // The websockets.Backend instance to use for testing.
+        var socketHandler;
+
+				setup(function() {
+          // Initialize fake Redux state for testing.
+          fakeRedux.store.initFakeState();
+
+          socketHandler = new websockets.Backend(true);
+        });
+
+        test('it ignores a message with an invalid type.',
+             function(done) {
+          // Capture the initial state so we can be sure it doesn't change.
+          const initialState = main.getReduxStore().getState();
+
+          // Send an invalid action.
+          const message = {type: 'invalid'};
+          assert.throws(function() {
+              socketHandler.processMessage_(message)
+          }, TypeError);
+
+          // Nothing should happen.
+          const actions = main.getReduxStore().getDispatchedActions();
+          assert.equal(0, actions.length);
+
+          done();
+        });
+
+        test('Redux reflects a state update request.',
+             function(done) {
+          // Send a message with an updated state.
+          let message = {type: 'state', state: {mcu_alive: true}};
+          socketHandler.processMessage_(message);
+
+          // We should see an action marking it as alive.
+          let actions = main.getReduxStore().getDispatchedActions();
+          assert.equal(1, actions.length);
+          assert.isTrue(actions[0].state.mcu_alive);
+
+          // Mark it as dead now.
+          message.state.mcu_alive = false;
+          socketHandler.processMessage_(message);
+
+          // We should see an action marking it as dead.
+          actions = main.getReduxStore().getDispatchedActions();
+          assert.equal(2, actions.length);
+          assert.isFalse(actions[1].state.mcu_alive);
+
+          done();
+        });
+
+        test('The action panel reflects a state update request.',
+             function(done) {
+          // Manually update the state, so that it indicates that the MCU is
+          // dead.
+          let fakeState = main.getReduxStore().getState();
+          fakeState.fromBackend.mcuAlive = false;
+
+          // Now send a message to force it to update with the fake state.
+          const message = {type: 'state', state: {mcu_alive: false}};
+          socketHandler.processMessage_(message);
+
+          // We should see two actions at this point. One is the initial state
+          // update action, and one is the action panel update action.
+          const actions = main.getReduxStore().getDispatchedActions();
+          assert.equal(2, actions.length);
+          const notRespondingMessage = gbActionPanelMessages.mcuNotResponding;
+          assert.equal(notRespondingMessage.title, actions[1].title);
+          assert.equal(notRespondingMessage.description,
+                       actions[1].description);
+          assert.equal(notRespondingMessage.level, actions[1].level);
+          assert.equal(notRespondingMessage.id, actions[1].id);
+
+          done();
+        });
+      });
+    </script>
+  </body>
+</html>
