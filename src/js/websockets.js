@@ -7,7 +7,18 @@ websockets.BACKEND_URL = 'ws://127.0.0.1:8080/app_socket'
 
 /** Represents a connection to the backend, via a websocket. */
 websockets.Backend = class {
-  constructor() {
+  /**
+   @param noConnect Will not connect immediately to the socket when true. */
+  constructor(noConnect = false) {
+    if (!noConnect) {
+      // Connect to the socket.
+      connect();
+    }
+  }
+
+  /** Connect to the websocket. This is normally done automatically in the
+   * constructor unless noConnect is specified. */
+  connect() {
     this.socket = new WebSocket(websockets.BACKEND_URL);
 
     // Register handlers.
@@ -34,7 +45,13 @@ websockets.Backend = class {
    @param event The event object passed to us by the websocket interface. */
   receiveMessage_(event) {
     let message = JSON.parse(event.data);
+    processMessage_(message);
+  }
 
+  /** Processes a received message, and updates things accordingly.
+   @private
+   @param message The JSON message that was received. */
+  processMessage_(message) {
     switch (message.type) {
       case 'state':
         // There was a state change on the server. Reflect it accordingly in
@@ -45,7 +62,31 @@ websockets.Backend = class {
 
       default:
         // Not a known message type.
-        console.log('Not handling unknown message type: ' + message.type)
+        throw new TypeError(
+            'Not handling unknown message type: ' + message.type);
+        return;
     };
+
+    // Perform any necessary updates to other components after the state change.
+    this.updateAfterStateChange_();
+  }
+
+  /** Updates any components that need to be updated after the state changes.
+   @private */
+  updateAfterStateChange_() {
+    let store = main.getReduxStore();
+    const backendState = store.getState().fromBackend;
+
+    // Update the action panel.
+    if (!backendState.mcuAlive) {
+      // If the MCU is dead, we want to show a message on the action panel about
+      // it.
+      const message = gbActionPanelMessages.mcuNotResponding;
+      const deadAction = actions.addPanelItem(message.title,
+                                              message.description,
+                                              message.level,
+                                              message.id);
+      store.dispatch(deadAction);
+    }
   }
 };
