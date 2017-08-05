@@ -4,6 +4,7 @@ gbActionPanel = {};
 /** @private
  * Creates the element. */
 gbActionPanel.create = function() {
+  console.log('Creating action panel.');
   Polymer({
     is: 'gb-action-panel',
     ready: gbActionPanel.ready_,
@@ -18,6 +19,8 @@ gbActionPanel.create = function() {
  * @private
  */
 gbActionPanel.ready_ = function() {
+  console.log('Starting Sagas.');
+
   // Start running sagas.
   let saga = main.getSagaMiddleware();
   saga.run(gbActionPanel.sagas.addSaga_);
@@ -141,11 +144,12 @@ gbActionPanel.sagas.addSaga_ = function*() {
   /** Creates a new item and adds it to the panel, based on the state.
    * @param action The specific action that was fired. */
   let processAction = function(action) {
+    console.log('Adding a panel item.');
     let store = main.getReduxStore();
     const state = store.getState();
 
     // Get the panel from the state.
-    let panel = state.actionPanel;
+    let panel = state.actionPanel.actionPanel;
     if (!panel) {
       throw new ReferenceError('actionPanel not set in Redux state!');
     }
@@ -156,7 +160,7 @@ gbActionPanel.sagas.addSaga_ = function*() {
     store.dispatch(actions.savePanelItem(action.id, node));
 
     // Update the summary panel
-    panel.updatePanelTop(new_state);
+    panel.updatePanelTop(state);
   };
 
   yield ReduxSaga.takeLatest(actions.ADD_PANEL_ITEM, processAction);
@@ -174,7 +178,7 @@ gbActionPanel.sagas.removeSaga_ = function*() {
     const state = store.getState();
 
     // Get the panel from the state.
-    let panel = state.actionPanel;
+    let panel = state.actionPanel.actionPanel;
     if (!panel) {
       throw new ReferenceError('actionPanel not set in Redux state!');
     }

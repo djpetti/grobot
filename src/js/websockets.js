@@ -12,7 +12,7 @@ websockets.Backend = class {
   constructor(noConnect = false) {
     if (!noConnect) {
       // Connect to the socket.
-      connect();
+      this.connect();
     }
   }
 
@@ -45,7 +45,7 @@ websockets.Backend = class {
    @param event The event object passed to us by the websocket interface. */
   receiveMessage_(event) {
     let message = JSON.parse(event.data);
-    processMessage_(message);
+    this.processMessage_(message);
   }
 
   /** Processes a received message, and updates things accordingly.

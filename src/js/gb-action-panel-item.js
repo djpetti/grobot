@@ -3,9 +3,10 @@ gbActionPanelItem = {};
 
 /** Creates the element. */
 gbActionPanelItem.create = function() {
+  console.log('Creating panel item element.');
+
   Polymer({
     is: 'gb-action-panel-item',
-    behaviors: [main.getReduxBehavior()],
 
     // The level of the item.
     level_: null,
