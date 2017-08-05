@@ -141,13 +141,6 @@ actions.actionPanelReducer_ = function(state = {}, action) {
         new_state.summaryLevel = 'normal';
       }
 
-      panel = state.actionPanel;
-      if (!panel) {
-        console.error('actionPanel not set in Redux state!');
-        // We can't really update the state reasonably in this case.
-        return state;
-      }
-
       return new_state;
 
     case actions.SAVE_PANEL_ITEM:
@@ -184,8 +177,6 @@ actions.actionPanelReducer_ = function(state = {}, action) {
           return state;
       }
 
-      // Remove the item from the panel.
-      panel.removeItem(to_remove);
       // Remove the item in the state.
       delete new_state.items[action.id]
 

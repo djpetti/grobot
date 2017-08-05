@@ -20,7 +20,8 @@ gbActionPanel.create = function() {
 gbActionPanel.ready_ = function() {
   // Start running sagas.
   let saga = main.getSagaMiddleware();
-  saga.run(gbActionPanel.sagas.addSaga);
+  saga.run(gbActionPanel.sagas.addSaga_);
+  saga.run(gbActionPanel.sagas.removeSaga_);
 
   // Dispatch the proper polymer action.
   let store = main.getReduxStore();
@@ -133,15 +134,17 @@ gbActionPanel.updatePanelTop_ = function(panelState) {
 gbActionPanel.sagas = {};
 
 /** Saga that handles adding an item to the action panel when the ADD_PANEL_ITEM
- * action is fired. */
-gbActionPanel.sagas.addSaga = function*() {
+ * action is fired.
+ * @private
+ */
+gbActionPanel.sagas.addSaga_ = function*() {
   /** Creates a new item and adds it to the panel, based on the state.
    * @param action The specific action that was fired. */
   let processAction = function(action) {
-    // Get the panel from the state.
     let store = main.getReduxStore();
     const state = store.getState();
 
+    // Get the panel from the state.
     let panel = state.actionPanel;
     if (!panel) {
       throw new ReferenceError('actionPanel not set in Redux state!');
@@ -157,4 +160,33 @@ gbActionPanel.sagas.addSaga = function*() {
   };
 
   yield ReduxSaga.takeLatest(actions.ADD_PANEL_ITEM, processAction);
+}
+
+/** Saga that handles removing an item from the action panel when the
+ * REMOVE_PANEL_ITEM action is fired.
+ * @private
+ */
+gbActionPanel.sagas.removeSaga_ = function*() {
+  /** Finds the item to remove and removes it from the panel.
+   * @param action The action that was fired. */
+  let processAction = function(action) {
+    let store = main.getReduxStore();
+    const state = store.getState();
+
+    // Get the panel from the state.
+    let panel = state.actionPanel;
+    if (!panel) {
+      throw new ReferenceError('actionPanel not set in Redux state!');
+    }
+
+    // Find the item to remove.
+    let to_remove = state.items[action.id];
+    // Remove it.
+    panel.removeItem(to_remove);
+
+    // The actual reducer will take care of making sure the state reflects
+    // this...
+  };
+
+  yield ReduxSaga.takeLatest(actions.REMOVE_PANEL_ITEM, processAction);
 }
