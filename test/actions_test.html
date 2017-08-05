@@ -4,12 +4,13 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, user-scalable=yes">
 
-    <title>test_el-element test</title>
+    <title>actions-test</title>
 
     <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
     <script src="../../web-component-tester/browser.js"></script>
     <script src="../bower_components/polymer-redux/polymer-redux.js"></script>
     <script src="../bower_components/redux/index.js"></script>
+    <script src="../bower_components/redux-saga/index.js"></script>
     <script src="../src/js/actions.js"></script>
     <script src="../src/js/main.js"></script>
 
@@ -25,9 +26,12 @@
 
     <script>
       suite('actions.js', function() {
+        var FakeActionPanelItem = null;
+        var dispatchSaveAction = null;
+
 				setup(function() {
           // A fake class for action panel items.
-          let FakeActionPanel = class {
+          FakeActionPanelItem = class {
             constructor(title, description, level) {
               this.title_ = title;
               this.description_ = description;
@@ -47,6 +51,28 @@
             }
           }
 
+          /**
+           * @private
+           * A helper function to automatically dispatch a corresponding
+           * SAVE_ITEM action for a particular ADD_ITEM action. Effectively
+           * allows us to model how the Saga behaves without running it.
+           * @param addAction The action we used to add the item.
+           * @param currentState The current state to send to the reducer.
+           * @returns The new state, after the item is saved.
+           */
+          dispatchSaveAction_ = function(addAction, currentState) {
+            // Create a fake item to add.
+            const node = new FakeActionPanelItem(addAction.title,
+                                                 addAction.description,
+                                                 addAction.level,
+                                                 addAction.id);
+
+            // Save it with Redux.
+            let saveItemAction = actions.savePanelItem(addAction.id,
+                                                       node);
+            return actions.grobotAppReducer(currentState, saveItemAction)
+          }
+
 				  // Implements a fake action panel that allows us to add stuff.
 				  stub('gb-action-panel', {
             /** Adds an item to the fake action panel.
@@ -57,7 +83,7 @@
              * @returns The item that it added, which in this case is just an
              * object instead of a DOM node. */
 				    addItem: function(title, description, level, id) {
-				      return new FakeActionPanel(title, description, level);
+				      return new FakeActionPanelItem(title, description, level);
 				    },
 
 				    /** Removes an item from the fake action panel.
@@ -73,9 +99,9 @@
              function(done) {
           // Empty action.
           const state = actions.initialState;
-          let new_state = actions.grobotAppReducer(state, 'BAD_ACTION');
+          let newState = actions.grobotAppReducer(state, 'BAD_ACTION');
           // The state shouldn't have changed.
-          assert.deepEqual(state, new_state);
+          assert.deepEqual(state, newState);
 
           done();
         });
@@ -87,25 +113,25 @@
 					assert.isTrue(state.fromBackend.mcuAlive);
 
 					// Now, create an action that should not change the state.
-					const alive_backend_state = {mcu_alive: true};
-					const alive_action = actions.updateBackendState(alive_backend_state);
+					const aliveBackendState = {mcu_alive: true};
+					const aliveAction = actions.updateBackendState(aliveBackendState);
 
 					// The state should remain the same.
-					let new_state = actions.grobotAppReducer(state, alive_action);
-					assert.deepEqual(state, new_state);
+					let newState = actions.grobotAppReducer(state, aliveAction);
+					assert.deepEqual(state, newState);
 
 					// Now, create an action that changes the state.
-					const dead_backend_state = {mcu_alive: false};
-					const dead_action = actions.updateBackendState(dead_backend_state);
+					const deadBackendState = {mcu_alive: false};
+					const deadAction = actions.updateBackendState(deadBackendState);
 
 					// The state should change.
-					new_state = actions.grobotAppReducer(state, dead_action);
-					assert.notDeepEqual(state, new_state);
-					assert.isFalse(new_state.fromBackend.mcuAlive);
+					newState = actions.grobotAppReducer(state, deadAction);
+					assert.notDeepEqual(state, newState);
+					assert.isFalse(newState.fromBackend.mcuAlive);
 
 					// Change it back.
-					new_state = actions.grobotAppReducer(new_state, alive_action);
-					assert.deepEqual(state, new_state);
+					newState = actions.grobotAppReducer(newState, aliveAction);
+					assert.deepEqual(state, newState);
 
           done();
         });
@@ -116,57 +142,63 @@
           let panel = fixture('gbActionFixture');
 
           // Register as the action panel.
-          const register_action = actions.setActionPanel(panel);
-          const state = actions.initialState;
-          let new_state = actions.grobotAppReducer(state, register_action);
+          const registerAction = actions.setActionPanel(panel);
+          let state = actions.initialState;
+          state = actions.grobotAppReducer(state, registerAction);
 
           // Make sure it got registered.
-          assert.deepEqual(panel, new_state.actionPanel.actionPanel);
+          assert.deepEqual(panel, state.actionPanel.actionPanel);
 
           // Try adding an item.
-          let add_item_action = actions.addPanelItem('Test', 'Test item',
-                                                     'normal', 't1');
-          new_state = actions.grobotAppReducer(new_state, add_item_action);
+          let addItemAction = actions.addPanelItem('Test', 'Test item',
+                                                   'normal', 't1');
+          state = actions.grobotAppReducer(state, addItemAction);
 
           // The summary status level should be normal.
-          assert.equal('normal', new_state.actionPanel.summaryLevel);
+          assert.equal('normal', state.actionPanel.summaryLevel);
 
           // Make sure it got added in the right place.
-          assert.equal(1, new_state.actionPanel.numNormal);
-          let got_item = new_state.actionPanel.items['t1'];
-          assert.equal('Test', got_item.getTitle());
-          assert.equal('Test item', got_item.getDescription());
-          assert.equal('normal', got_item.getLevel());
+          assert.equal(1, state.actionPanel.numNormal);
+
+          // Dispatch the save action, and check that the node actually
+          // gets saved.
+          state = dispatchSaveAction_(addItemAction, state);
+          let gotItem = state.actionPanel.items['t1'];
+          assert.equal('Test', gotItem.getTitle());
+          assert.equal('Test item', gotItem.getDescription());
+          assert.equal('normal', gotItem.getLevel());
 
           // Try adding with warning level.
-          add_item_action = actions.addPanelItem('Test', 'Test item',
-                                                 'warning', 't2');
-          new_state = actions.grobotAppReducer(new_state, add_item_action);
+          addItemAction = actions.addPanelItem('Test', 'Test item',
+                                               'warning', 't2');
+          state = actions.grobotAppReducer(state, addItemAction);
 
           // The summary status level should be warning.
-          assert.equal('warning', new_state.actionPanel.summaryLevel);
+          assert.equal('warning', state.actionPanel.summaryLevel);
 
-          // Make sure it got added in the right place.
-          assert.equal(1, new_state.actionPanel.numWarning);
-          got_item = new_state.actionPanel.items['t2'];
-          assert.equal('Test', got_item.getTitle());
-          assert.equal('Test item', got_item.getDescription());
-          assert.equal('warning', got_item.getLevel());
+          // Dispatch another save action, and make sure it gets saved.
+          state = dispatchSaveAction_(addItemAction, state);
+          assert.equal(1, state.actionPanel.numWarning);
+          gotItem = state.actionPanel.items['t2'];
+          assert.equal('Test', gotItem.getTitle());
+          assert.equal('Test item', gotItem.getDescription());
+          assert.equal('warning', gotItem.getLevel());
 
           // Try adding with error level.
-          add_item_action = actions.addPanelItem('Test', 'Test item',
-                                                 'error', 't3');
-          new_state = actions.grobotAppReducer(new_state, add_item_action);
+          addItemAction = actions.addPanelItem('Test', 'Test item',
+                                               'error', 't3');
+          state = actions.grobotAppReducer(state, addItemAction);
 
           // The summary status level should be error.
-          assert.equal('error', new_state.actionPanel.summaryLevel);
+          assert.equal('error', state.actionPanel.summaryLevel);
 
-          // Make sure it got added in the right place.
-          assert.equal(1, new_state.actionPanel.numError);
-          got_item = new_state.actionPanel.items['t3'];
-          assert.equal('Test', got_item.getTitle());
-          assert.equal('Test item', got_item.getDescription());
-          assert.equal('error', got_item.getLevel());
+          // Dispatch another save action, and make sure it gets saved.
+          state = dispatchSaveAction_(addItemAction, state);
+          assert.equal(1, state.actionPanel.numError);
+          gotItem = state.actionPanel.items['t3'];
+          assert.equal('Test', gotItem.getTitle());
+          assert.equal('Test item', gotItem.getDescription());
+          assert.equal('error', gotItem.getLevel());
 
           done();
         });
@@ -176,41 +208,45 @@
           let panel = fixture('gbActionFixture');
 
           // Register as the action panel.
-          const register_action = actions.setActionPanel(panel);
+          const registerAction = actions.setActionPanel(panel);
           const state = actions.initialState;
-          let new_state = actions.grobotAppReducer(state, register_action);
+          let newState = actions.grobotAppReducer(state, registerAction);
 
           // Try adding an item.
-          let add_item_action = actions.addPanelItem('Test', 'Test item',
-                                                     'normal', 't1');
-          new_state = actions.grobotAppReducer(new_state, add_item_action);
+          let addItemAction = actions.addPanelItem('Test', 'Test item',
+                                                   'normal', 't1');
+          newState = actions.grobotAppReducer(newState, addItemAction);
           // Make sure it got added.
-          assert.equal(1, new_state.actionPanel.numNormal);
+          assert.equal(1, newState.actionPanel.numNormal);
+          // Issue a save action for it.
+          newState = dispatchSaveAction_(addItemAction, newState);
 
           // Try removing the item.
           let remove_item_action = actions.removePanelItem('t1');
-          new_state = actions.grobotAppReducer(new_state, remove_item_action);
+          newState = actions.grobotAppReducer(newState, remove_item_action);
           // Make sure it got removed.
-          assert.equal(0, new_state.actionPanel.numNormal);
+          assert.equal(0, newState.actionPanel.numNormal);
 
           // Repeat with other item levels.
-          add_item_action = actions.addPanelItem('Test', 'Test item',
-                                                     'warning', 't1');
-          new_state = actions.grobotAppReducer(new_state, add_item_action);
-          assert.equal(1, new_state.actionPanel.numWarning);
+          addItemAction = actions.addPanelItem('Test', 'Test item',
+                                               'warning', 't1');
+          newState = actions.grobotAppReducer(newState, addItemAction);
+          assert.equal(1, newState.actionPanel.numWarning);
+          newState = dispatchSaveAction_(addItemAction, newState);
 
           remove_item_action = actions.removePanelItem('t1');
-          new_state = actions.grobotAppReducer(new_state, remove_item_action);
-          assert.equal(0, new_state.actionPanel.numWarning);
+          newState = actions.grobotAppReducer(newState, remove_item_action);
+          assert.equal(0, newState.actionPanel.numWarning);
 
-          add_item_action = actions.addPanelItem('Test', 'Test item',
-                                                     'error', 't1');
-          new_state = actions.grobotAppReducer(new_state, add_item_action);
-          assert.equal(1, new_state.actionPanel.numError);
+          addItemAction = actions.addPanelItem('Test', 'Test item',
+                                               'error', 't1');
+          newState = actions.grobotAppReducer(newState, addItemAction);
+          assert.equal(1, newState.actionPanel.numError);
+          newState = dispatchSaveAction_(addItemAction, newState);
 
           remove_item_action = actions.removePanelItem('t1');
-          new_state = actions.grobotAppReducer(new_state, remove_item_action);
-          assert.equal(0, new_state.actionPanel.numError);
+          newState = actions.grobotAppReducer(newState, remove_item_action);
+          assert.equal(0, newState.actionPanel.numError);
 
           done();
         });

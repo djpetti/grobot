@@ -3,8 +3,13 @@ actions = {};
 
 // Updates the Redux state based on the backend state.
 actions.UPDATE_BACKEND_STATE = 'UPDATE_BACKEND_STATE';
-// Adds a new item to the action panel.
+// Adds a new item to the action panel. This does everything except save the
+// actual panel item into the state.
 actions.ADD_PANEL_ITEM = 'ADD_PANEL_ITEM';
+// Saves a created action panel item, so it is accessible from the state. This
+// is meant to be used by Sagas that catch the ADD_PANEL_ITEM action, create the
+// panel item, and then save it into the state.
+actions.SAVE_PANEL_ITEM = 'SAVE_PANEL_ITEM';
 // Removes an item from the action panel.
 actions.REMOVE_PANEL_ITEM = 'REMOVE_PANEL_ITEM';
 // Sets the core action panel object in the state.
@@ -16,7 +21,7 @@ actions.SET_ACTION_PANEL = 'SET_ACTION_PANEL';
  */
 actions.updateBackendState = function(state) {
   return {type: actions.UPDATE_BACKEND_STATE, state};
-};
+}
 
 /** Action creator that creates an ADD_PANEL_ITEM.
  * @param title The title of the item.
@@ -27,7 +32,16 @@ actions.updateBackendState = function(state) {
  */
 actions.addPanelItem = function(title, description, level, id) {
   return {type: actions.ADD_PANEL_ITEM, title, description, level, id};
-};
+}
+
+/** Action creator that creates a SAVE_PANEL_ITEM.
+ * @param id A unique ID that will be used to identify this item.
+ * @param item The actual DOM node containing the item.
+ * @returns The created action.
+ */
+actions.savePanelItem = function(id, item) {
+  return {type: actions.SAVE_PANEL_ITEM, id, item};
+}
 
 /** Action creator that creates a REMOVE_PANEL_ITEM.
  * @param id The unique ID of the item, specified at creation time.
@@ -134,12 +148,11 @@ actions.actionPanelReducer_ = function(state = {}, action) {
         return state;
       }
 
-      // Add the actual item to the DOM.
-      let node = panel.addItem(action.title, action.description, action.level);
-      // Update the summary panel.
-      panel.updatePanelTop(new_state);
-      // Make it accessible by ID.
-      new_state.items[action.id] = node;
+      return new_state;
+
+    case actions.SAVE_PANEL_ITEM:
+      // All we really have to do now is save the item by ID.
+      new_state.items[action.id] = action.item;
 
       return new_state;
 

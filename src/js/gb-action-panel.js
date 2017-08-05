@@ -18,6 +18,10 @@ gbActionPanel.create = function() {
  * @private
  */
 gbActionPanel.ready_ = function() {
+  // Start running sagas.
+  let saga = main.getSagaMiddleware();
+  saga.run(gbActionPanel.sagas.addSaga);
+
   // Dispatch the proper polymer action.
   let store = main.getReduxStore();
   store.dispatch(actions.setActionPanel(this));
@@ -123,4 +127,34 @@ gbActionPanel.updatePanelTop_ = function(panelState) {
       this.$.statusIcon.src = gbActionPanelItem.ICON_URLS['normal'];
       break;
   }
+}
+
+// Sub-namespace specifically for saga handlers.
+gbActionPanel.sagas = {};
+
+/** Saga that handles adding an item to the action panel when the ADD_PANEL_ITEM
+ * action is fired. */
+gbActionPanel.sagas.addSaga = function*() {
+  /** Creates a new item and adds it to the panel, based on the state.
+   * @param action The specific action that was fired. */
+  let processAction = function(action) {
+    // Get the panel from the state.
+    let store = main.getReduxStore();
+    const state = store.getState();
+
+    let panel = state.actionPanel;
+    if (!panel) {
+      throw new ReferenceError('actionPanel not set in Redux state!');
+    }
+
+    // Add the actual item to the DOM.
+    let node = panel.addItem(action.title, action.description, action.level);
+    // Now that we have the node, dispatch an action to save it.
+    store.dispatch(actions.savePanelItem(action.id, node));
+
+    // Update the summary panel
+    panel.updatePanelTop(new_state);
+  };
+
+  yield ReduxSaga.takeLatest(actions.ADD_PANEL_ITEM, processAction);
 }
