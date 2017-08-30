@@ -54,8 +54,9 @@
           /**
            * @private
            * A helper function to automatically dispatch a corresponding
-           * SAVE_ITEM action for a particular ADD_ITEM action. Effectively
-           * allows us to model how the Saga behaves without running it.
+           * UPDATE_PANEL_ITEM_LIST action for a particular ADD_ITEM action.
+           * Effectively allows us to model how the Saga behaves without
+           * running it.
            * @param addAction The action we used to add the item.
            * @param currentState The current state to send to the reducer.
            * @returns The new state, after the item is saved.
@@ -68,8 +69,8 @@
                                                  addAction.id);
 
             // Save it with Redux.
-            let saveItemAction = actions.savePanelItem(addAction.id,
-                                                       node);
+            let saveItemAction = actions.updatePanelItemList(addAction.id,
+                                                             node);
             return actions.grobotAppReducer(currentState, saveItemAction)
           }
 
