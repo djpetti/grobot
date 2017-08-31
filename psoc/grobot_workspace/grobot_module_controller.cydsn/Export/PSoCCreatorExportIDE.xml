@@ -43,6 +43,7 @@
           <File BuildType="BUILD" Toolchain="">.\display.c</File>
           <File BuildType="BUILD" Toolchain="">.\water.c</File>
           <File BuildType="BUILD" Toolchain="">.\utils.c</File>
+          <File BuildType="BUILD" Toolchain="">.\discovery.c</File>
           <File BuildType="BUILD" Toolchain="">.\cyapicallbacks.h</File>
           <File BuildType="BUILD" Toolchain="">.\config.h</File>
           <File BuildType="BUILD" Toolchain="">.\messaging.h</File>
@@ -51,6 +52,7 @@
           <File BuildType="BUILD" Toolchain="">.\display.h</File>
           <File BuildType="BUILD" Toolchain="">.\water.h</File>
           <File BuildType="BUILD" Toolchain="">.\utils.h</File>
+          <File BuildType="BUILD" Toolchain="">.\discovery.h</File>
         </Files>
       </Folder>
       <Folder BuildType="STRICT" Path="C:\Users\pettid\git\grobot\psoc\grobot_workspace\grobot_module_controller.cydsn\Generated_Source\PSoC4">

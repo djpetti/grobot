@@ -5,6 +5,7 @@
 #include <project.h>
 
 #include "config.h"
+#include "discovery.h"
 #include "display.h"
 #include "lighting.h"
 #include "messaging.h"
@@ -27,29 +28,24 @@ void _process_ping(const struct Message *message) {
   
   // In this case, we have to send back a response. We can figure out who
   // to send it to from the source.
-  messaging_send_message(message->source, "PING", "ack");
+  while (!messaging_send_message(message->source, "PING", "ack"));
 }
 
-// Process a SETID command.
+// Process an IMALIVE command. This is a command that is only used by the
+// module controllers.
 // Args:
 //  message: The message containing the command. It does nothing if the command
-//           is not a SETID command.
-void _process_set_id(const struct Message *message) {
-  if (strcmp(message->command, "SETID")) {
-    // Not a SETID command.
+//           is not an IMALIVE command.
+void _process_imalive(const struct Message *message) {
+  if (strcmp(message->command, "IMALIVE")) {
+    // Not an IMALIVE command.
     return;
   }
   
-  // This command is used so prime can set the controller ID of a module
-  // controller. That means that when we receive one, we need to reset the ID.
-  if (message->source != 1) {
-    // We don't want to let anyone except prime do this.
-    return;
-  }
-  // Extract the actual ID, which is the singular field.
-  uint8_t id = message->fields[0] - 48;
-  // Now, write the new ID.
-  messaging_set_controller_id(id);
+  // This command broadcast once as soon as a controller comes online. It is
+  // part of the module discovery process.
+  // This is handled by the module discovery system.
+  discovery_handle_imalive();
 }
 
 // Process a SETLED command.
@@ -149,7 +145,6 @@ void _process_message(struct Message message) {
   
   // One of these functions will handle it...
   _process_ping(&message);
-  _process_set_id(&message);
   _process_set_led(&message);
   _process_set_pump(&message);
   _process_force_nutr_ph(&message);
@@ -175,6 +170,8 @@ int main()
   
     // Initialize messaging, with the callback.
     messaging_init(_process_message);
+    // Start discovery as soon as we have messaging.
+    discovery_init();
     
     // Start the display.
     display_init();

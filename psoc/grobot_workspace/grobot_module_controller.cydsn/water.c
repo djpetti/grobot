@@ -111,6 +111,8 @@ void _send_water_status(uint8_t water_temp, int16_t water_ec,
   char fields[16];
   snprintf(fields, 16, "%u/%d/%u", water_temp, water_ec, water_ph);
   
+  // Since this is just a status message, we don't have to block everything
+  // waiting for the send to succeed.
   messaging_send_message(1, "WATSTS", fields);
 }
                         

@@ -30,7 +30,7 @@ bool messaging_init(void (*message_handler)(struct Message message));
 //               and 2 is the base module controller.
 //  command: The command associated with the message.
 //  fields: The /-separated fields associated with the message.
-void messaging_send_message(uint8_t destination, const char *command,
+bool messaging_send_message(uint8_t destination, const char *command,
                             const char *fields);
 // Sends a message directly from a message structure.
 // WARNING: To save space, this function will directly overwrite parts of the
@@ -40,9 +40,8 @@ void messaging_send_message(uint8_t destination, const char *command,
 //  message: The message to send.
 void messaging_forward_message(struct Message *message);
 
-// Sets a new controller ID. It will only set it if it hasn't been set
-// before. Additionally, it will blink the new ID using the status LED for
-// debugging purposes.
+// Sets a new controller ID. Additionally, it will blink the new ID using
+// the status LED for debugging purposes.
 // Args:
 //  id: The new controller id.
 void messaging_set_controller_id(uint8_t id);

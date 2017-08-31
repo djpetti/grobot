@@ -16,27 +16,24 @@
 
 // Stores the most recently partially received message from acting as a
 // master and a slave, and for the UART.
-struct Message g_master_message_part;
-struct Message g_slave_message_part;
-struct Message g_uart_message_part;
+static struct Message g_master_message_part;
+static struct Message g_slave_message_part;
+static struct Message g_uart_message_part;
 
 // The I2C write buffer to use when operating in slave mode.
-uint8_t g_slave_recv_buffer[RECV_BUFFER_SIZE];
+static uint8_t g_slave_recv_buffer[RECV_BUFFER_SIZE];
 // The I2C read buffer to use when operating in slave mode.
-uint8_t g_slave_send_buffer[SEND_BUFFER_SIZE];
+static uint8_t g_slave_send_buffer[SEND_BUFFER_SIZE];
 // Scratch space for building sent messages.
-char g_message_scratch[MESSAGE_SCRATCH_SIZE];
-
-// We need to keep track of our controller ID. If this is the base system, it
-// will always be 2, otherwise it will be assigned by prime later.
-#ifdef IS_BASE_CONTROLLER
-uint8_t g_controller_id = 2;
-#else
-uint8_t g_controller_id = 0;
-#endif
+static char g_message_scratch[MESSAGE_SCRATCH_SIZE];
 
 // Callback for handling received messages.
-void (*g_message_handler)(struct Message message);
+static void (*g_message_handler)(struct Message message);
+
+// Keeps track of our controller ID, which defaults to 8. This is set as the
+// slave address for I2C. It will be set permanently during the discovery
+// process.
+static uint8_t g_controller_id = 8;
 
 // Procedures for handling a byte that are common across the master, slave,
 // and UART interfaces.
@@ -150,11 +147,6 @@ bool messaging_init(void (*message_handler)(struct Message message)) {
   // Set the interrupt handler.
   STACK_I2C_SetCustomInterruptHandler(_handle_i2c);
   
-  // Request a controller ID, if we need one.
-  if (!g_controller_id) {
-    messaging_send_message(1, "REQID", "");
-  }
-  
   // Responses will be handled by the ISR, so we can just go on for now.
   return true;
 }
@@ -165,7 +157,10 @@ bool messaging_init(void (*message_handler)(struct Message message)) {
 //  destination: The destination of the message.
 //  commnad: The command associated with the message.
 //  fields: The field string associated with the message.
-void _do_send_message(uint8_t source, uint8_t destination, const char *command,
+// Returns:
+//  True if the message was sent, false if sending failed and needs to be
+//  retried.
+bool _do_send_message(uint8_t source, uint8_t destination, const char *command,
                       const char *fields) {
   // Format message.
   const char *fields_format = "<%s/%u%u/%s>";
@@ -184,7 +179,7 @@ void _do_send_message(uint8_t source, uint8_t destination, const char *command,
   if (destination == 1) {
     // We can send it directly to prime.
     PRIME_UART_UartPutString(g_message_scratch);
-    return;
+    return true;
   }
 #else
   if (destination == 1) {
@@ -195,14 +190,16 @@ void _do_send_message(uint8_t source, uint8_t destination, const char *command,
 #endif
 
   // Handle everything else.
-  STACK_I2C_I2CMasterWriteBuf(destination, (uint8_t *)g_message_scratch,
-                              message_size,
-                              STACK_I2C_I2C_MODE_COMPLETE_XFER);
+  const uint32_t error = STACK_I2C_I2CMasterWriteBuf(destination,
+                            (uint8_t *)g_message_scratch,
+                            message_size,
+                            STACK_I2C_I2C_MODE_COMPLETE_XFER);
+  return error == STACK_I2C_I2C_MSTR_NO_ERROR;
 }
 
-void messaging_send_message(uint8_t destination, const char *command,
+bool messaging_send_message(uint8_t destination, const char *command,
                             const char *fields) {
-  _do_send_message(g_controller_id, destination, command, fields);
+  return _do_send_message(g_controller_id, destination, command, fields);
 }
                             
 void messaging_forward_message(struct Message *message) {
@@ -230,10 +227,6 @@ void messaging_forward_message(struct Message *message) {
 }
                             
 void messaging_set_controller_id(uint8_t id) {
-  if (g_controller_id != 0) {
-    // It's already been set. Don't change it.
-    return;
-  }
   g_controller_id = id;
   
   // Set this as our I2C address.

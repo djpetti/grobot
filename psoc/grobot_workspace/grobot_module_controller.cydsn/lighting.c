@@ -78,6 +78,8 @@ void _send_led_status(uint8_t red_temp, uint8_t white_temp, uint8_t blue_temp,
            blue_temp, g_red_pwm, g_white_pwm, g_blue_pwm, fan_speed,
            g_temp_fault);
   
+  // Since this is just a status message, we don't have to block everything
+  // waiting for the send to succeed.
   messaging_send_message(1, "LEDSTS", fields);
 }
 
