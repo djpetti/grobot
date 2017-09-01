@@ -10,7 +10,8 @@ import time
 import unittest
 
 from backend import server
-from backend.mcu_sim import psoc
+from backend.module_sim import simulator
+from backend.module_sim import base_module
 
 
 """ Script to manage building and testing the web application. """
@@ -132,8 +133,8 @@ def main():
                       help="Rebuild polymer app and serve from build/bundled.")
   parser.add_argument("-t", "--test-only", action="store_true",
                       help="Only run the tests and nothing else.")
-  parser.add_argument("-m", "--mcu_simulation", action="store_true",
-                      help="Run with simulated MCU.")
+  parser.add_argument("-m", "--module_simulation", action="store_true",
+                      help="Run with simulated module stack.")
   parser.add_argument("-f", "--force", action="store_true",
                       help="Continue even if the tests fail.")
   parser.add_argument("-c", "--containerized", action="store_true",
@@ -169,9 +170,15 @@ def main():
 
     # Enable MCU simulation if necessary.
     settings = {}
-    if args.mcu_simulation:
-      sim = psoc.Psoc()
-      settings["mcu_serial"] = sim.get_device_name()
+    if args.module_simulation:
+      sim = simulator.Simulator()
+      settings["mcu_serial"] = sim.get_serial_name()
+
+      # We always have at least the base module.
+      sim.add_module(base_module.BaseModule)
+
+      # Start the simulator running.
+      sim.start()
 
     server.main(dev_mode=(not args.production), override_settings=settings)
 

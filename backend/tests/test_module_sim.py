@@ -1,7 +1,9 @@
 import logging
 
-from ..mcu_sim import psoc
+from ..module_sim import base_module
+from ..module_sim import simulator
 from .. import serial_talker
+
 from . import base_test
 
 
@@ -11,20 +13,26 @@ from . import base_test
 logger = logging.getLogger(__name__)
 
 
-class TestPsoc(base_test.BaseTest):
-  """ Tests the PSoC module, which simulates a PSoC device. """
+class TestSimulator(base_test.BaseTest):
+  """ Tests the Simulator, which simulates a module stack. """
 
   def setUp(self):
     super().setUp()
 
     # Start the PSoC simulator.
-    self.__sim = psoc.Psoc()
+    self.__sim = simulator.Simulator()
 
     # Initialize serial connection with simulator.
-    device_name = self.__sim.get_device_name()
+    device_name = self.__sim.get_serial_name()
     self.__serial = serial_talker.SerialTalker(115200, device=device_name,
                                                ioloop=self.io_loop)
     logger.info("Initialized connection to simulator.")
+
+    # Add the base module.
+    self.__sim.add_module(base_module.BaseModule)
+
+    # Start the simulation running.
+    self.__sim.start()
 
   def tearDown(self):
     self.__sim.force_exit()
