@@ -10,6 +10,7 @@ import tornado.ioloop
 import tornado.web
 
 from . import cron
+from . import module
 from . import serial_talker
 from . import websocket
 
@@ -126,9 +127,11 @@ def main(dev_mode=False, override_settings={}):
   logger.info("Listening on port %d." % (port))
   app.listen(port)
 
-  # Start periodic jobs.
   if serial:
+    # Initialize MCU status checker.
     cron.CheckMcuAliveJob(10000, serial)
+    # Initialize module system.
+    module.ModuleInterface(serial)
 
   logger.info("Starting server...")
   tornado.ioloop.IOLoop.current().start()

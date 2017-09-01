@@ -137,10 +137,10 @@ class Message:
   # command, it is compelled to send back a response to the sender. This can be
   # used to verify that a particular component is online.
   Ping = "PING"
-  # A SetControllerId command is used by Prime to set the ID of a controller.
-  # The controller will set its ID exactly once. After that, the ID is set, and
-  # cannot be changed until the next power cycle.
-  SetControllerId = "SETID"
+  # An IMALIVE command is the first thing sent out by modules when
+  # they finish initializing. It is used in the module discovery
+  # process.
+  ImAlive = "IMALIVE"
   # A SetLedBrightness command does pretty much what the name implies.
   SetLedBrightness = "SETLED"
   # A SetMainPump command is used to turn the main system pump on and off.
@@ -158,7 +158,8 @@ class Message:
     """ Checks the number of arguments, and defers to the proper method for
     construction. See the following two methods for the details.
     Args:
-      source: The source to use when sending messages. Defaults to 1. """
+      source: The source to use when sending messages. Defaults to 1. This
+              argument should really only be used during testing. """
     self.__source = source
 
     if not len(args):
@@ -295,7 +296,7 @@ class SerialTalker:
     """ Adds a callback that will be called whenever a message is received.
     Args:
       callback: The callback that will be used. It should take an argument for
-      the message. """
+                the message. """
     logger.debug("Adding callback %s." % (str(callback)))
     self.__read_callbacks.add(callback)
 
