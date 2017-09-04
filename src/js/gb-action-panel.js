@@ -23,8 +23,8 @@ gbActionPanel.ready_ = function() {
 
   // Start running sagas.
   let saga = main.getSagaMiddleware();
-  saga.run(gbActionPanel.sagas.addSaga_);
-  saga.run(gbActionPanel.sagas.removeSaga_);
+  saga.run(gbActionPanel.sagas.addSagaWaiter_);
+  saga.run(gbActionPanel.sagas.removeSagaWaiter_);
 
   // Dispatch the proper polymer action.
   let store = main.getReduxStore();
@@ -66,7 +66,7 @@ gbActionPanel.addItem_ = function(title, description, level) {
     if (level == 'warning') {
       const errorLength = state.actionPanel.numError;
 
-      if (errorLength === 0) {
+      if (!errorLength) {
         // No errors.
         nodeAfter = localDom.children[0];
       } else {
@@ -139,58 +139,68 @@ gbActionPanel.sagas = {};
 /** Saga that handles adding an item to the action panel when the ADD_PANEL_ITEM
  * action is fired.
  * @private
+ * @param action The specific action specifying the item to add.
  */
-gbActionPanel.sagas.addSaga_ = function*() {
-  /** Creates a new item and adds it to the panel, based on the state.
-   * @param action The specific action that was fired. */
-  let processAction = function(action) {
-    console.log('Adding a panel item.');
-    let store = main.getReduxStore();
-    const state = store.getState();
+gbActionPanel.sagas.addSaga_ = function*(action) {
+  let store = main.getReduxStore();
+  const state = store.getState();
 
-    // Get the panel from the state.
-    let panel = state.actionPanel.actionPanel;
-    if (!panel) {
-      throw new ReferenceError('actionPanel not set in Redux state!');
-    }
+  // Get the panel from the state.
+  let panel = state.actionPanel.actionPanel;
+  if (!panel) {
+    throw new ReferenceError('actionPanel not set in Redux state!');
+  }
 
-    // Add the actual item to the DOM.
-    let node = panel.addItem(action.title, action.description, action.level);
-    // Now that we have the node, dispatch an action to save it.
-    store.dispatch(actions.savePanelItem(action.id, node));
+  // Add the actual item to the DOM.
+  let node = panel.addItem(action.title, action.description, action.level);
 
-    // Update the summary panel
-    panel.updatePanelTop(state);
-  };
+  // Update the summary panel.
+  panel.updatePanelTop(state.actionPanel);
 
-  yield ReduxSaga.takeLatest(actions.ADD_PANEL_ITEM, processAction);
+  // All that's left to do is save the actual node. We delegate back to the
+  // reducers for this.
+  yield ReduxSaga.effects.put(actions.updatePanelItemList(action.id, node));
 }
 
 /** Saga that handles removing an item from the action panel when the
  * REMOVE_PANEL_ITEM action is fired.
  * @private
+ * @param action The action specifying the item to remove.
  */
-gbActionPanel.sagas.removeSaga_ = function*() {
-  /** Finds the item to remove and removes it from the panel.
-   * @param action The action that was fired. */
-  let processAction = function(action) {
-    let store = main.getReduxStore();
-    const state = store.getState();
+gbActionPanel.sagas.removeSaga_ = function*(action) {
+  let store = main.getReduxStore();
+  const state = store.getState();
 
-    // Get the panel from the state.
-    let panel = state.actionPanel.actionPanel;
-    if (!panel) {
-      throw new ReferenceError('actionPanel not set in Redux state!');
-    }
+  // Get the panel from the state.
+  let panel = state.actionPanel.actionPanel;
+  if (!panel) {
+    throw new ReferenceError('actionPanel not set in Redux state!');
+  }
 
-    // Find the item to remove.
-    let to_remove = state.items[action.id];
-    // Remove it.
-    panel.removeItem(to_remove);
+  // Find the item to remove.
+  let to_remove = state.actionPanel.items[action.id];
+  // Remove it.
+  panel.removeItem(to_remove);
 
-    // The actual reducer will take care of making sure the state reflects
-    // this...
-  };
+  // Update the summary panel.
+  panel.updatePanelTop(state.actionPanel);
 
-  yield ReduxSaga.takeLatest(actions.REMOVE_PANEL_ITEM, processAction);
+  // Remove the node in the state.
+  yield ReduxSaga.effects.put(actions.updatePanelItemList(action.id, null));
+}
+
+/** Listens for ADD_PANEL_ITEM events and dispatches Sagas to handle them.
+ * @private
+ */
+gbActionPanel.sagas.addSagaWaiter_ = function*() {
+  yield *ReduxSaga.takeLatest(actions.ADD_PANEL_ITEM,
+                              gbActionPanel.sagas.addSaga_);
+}
+
+/** Listens for REMOVE_PANEL_ITEM events and dispatches Sagas to handle them.
+ * @private
+ */
+gbActionPanel.sagas.removeSagaWaiter_ = function*() {
+  yield *ReduxSaga.takeLatest(actions.REMOVE_PANEL_ITEM,
+                              gbActionPanel.sagas.removeSaga_);
 }

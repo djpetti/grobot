@@ -6,12 +6,14 @@ actions.UPDATE_BACKEND_STATE = 'UPDATE_BACKEND_STATE';
 // Adds a new item to the action panel. This does everything except save the
 // actual panel item into the state.
 actions.ADD_PANEL_ITEM = 'ADD_PANEL_ITEM';
-// Saves a created action panel item, so it is accessible from the state. This
-// is meant to be used by Sagas that catch the ADD_PANEL_ITEM action, create the
-// panel item, and then save it into the state.
-actions.SAVE_PANEL_ITEM = 'SAVE_PANEL_ITEM';
-// Removes an item from the action panel.
+// Removes an item from the action panel. This does everything except remove the
+// actual item from the state.
 actions.REMOVE_PANEL_ITEM = 'REMOVE_PANEL_ITEM';
+// Updates the list of panel items in the state. This
+// is meant to be used by Sagas that catch the ADD_PANEL_ITEM or
+// REMOVE_PANEL_ITEM actions, create or remove the panel item,
+// and then save it into the state.
+actions.UPDATE_PANEL_ITEM_LIST = 'UPDATE_PANEL_ITEM_LIST';
 // Sets the core action panel object in the state.
 actions.SET_ACTION_PANEL = 'SET_ACTION_PANEL';
 
@@ -34,13 +36,14 @@ actions.addPanelItem = function(title, description, level, id) {
   return {type: actions.ADD_PANEL_ITEM, title, description, level, id};
 }
 
-/** Action creator that creates a SAVE_PANEL_ITEM.
+/** Action creator that creates an UPDATE_PANEL_ITEM_LIST.
  * @param id A unique ID that will be used to identify this item.
- * @param item The actual DOM node containing the item.
+ * @param item The actual DOM node containing the item, or null if we want to
+ *             remove this item.
  * @returns The created action.
  */
-actions.savePanelItem = function(id, item) {
-  return {type: actions.SAVE_PANEL_ITEM, id, item};
+actions.updatePanelItemList = function(id, item) {
+  return {type: actions.UPDATE_PANEL_ITEM_LIST, id, item};
 }
 
 /** Action creator that creates a REMOVE_PANEL_ITEM.
@@ -107,6 +110,21 @@ actions.fromBackendReducer_ = function(state = {}, action) {
  * @returns The new state.
  */
 actions.actionPanelReducer_ = function(state = {}, action) {
+  /** Simple helper function to update the panel summary level.
+   * @param state The state to update.
+   */
+  let updateSummaryLevel = function(state) {
+    // The summary level always gets set to the highest level of any item
+    // in the panel.
+    if (state.numError > 0) {
+      state.summaryLevel = 'error';
+    } else if (new_state.numWarning > 0) {
+      state.summaryLevel = 'warning';
+    } else {
+      state.summaryLevel = 'normal';
+    }
+  };
+
   let new_state = Object.assign({}, state);
   let panel = null;
 
@@ -131,21 +149,18 @@ actions.actionPanelReducer_ = function(state = {}, action) {
           return state;
       }
 
-      // Update the summary level. The summary level always gets set to the
-      // highest level of any item in the panel.
-      if (new_state.numError > 0) {
-        new_state.summaryLevel = 'error';
-      } else if (new_state.numWarning > 0) {
-        new_state.summaryLevel = 'warning';
-      } else {
-        new_state.summaryLevel = 'normal';
-      }
+      updateSummaryLevel(new_state);
 
       return new_state;
 
-    case actions.SAVE_PANEL_ITEM:
-      // All we really have to do now is save the item by ID.
-      new_state.items[action.id] = action.item;
+    case actions.UPDATE_PANEL_ITEM_LIST:
+      if (action.item) {
+        // All we really have to do now is save the item by ID.
+        new_state.items[action.id] = action.item;
+      } else {
+        // Delete the item.
+        delete new_state.items[action.id];
+      }
 
       return new_state;
 
@@ -177,10 +192,9 @@ actions.actionPanelReducer_ = function(state = {}, action) {
           return state;
       }
 
-      // Remove the item in the state.
-      delete new_state.items[action.id]
+      updateSummaryLevel(new_state);
 
-      return new_state
+      return new_state;
 
     default:
       return state

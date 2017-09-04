@@ -7,8 +7,9 @@ fakeRedux = {};
 /** Fake Redux store for testing. */
 fakeRedux.store = class {
   constructor() {
-    // Fake state for testing.
-    this.state_ = actions.initialState;
+    // Fake state for testing. The deep cloning method is terribly inneficient,
+    // but for testing, correctness matters more than speed.
+    this.state_ = JSON.parse(JSON.stringify(actions.initialState));
     // Any actions dispatched to the fake store.
     this.dispatchedActions_ = [];
   }
