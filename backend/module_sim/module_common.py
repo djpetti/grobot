@@ -24,7 +24,15 @@ class ModuleCommon:
       command: The command for the message.
       dest: The destination address of the message.
       All further args will be interpreted as field values. """
-    self._sim.write_message(command, self._id, dest, *args)
+    self._sim.write_message(command, self, dest, *args)
+
+  def _handle_message(self, message):
+    """ Handles a received message. Should be overridden by subclasses.
+    Args:
+      message: The received message. """
+    if message.command == serial_talker.Message.Ping:
+      # Respond to Ping requests.
+      self.__handle_ping()
 
   def on_startup(self):
     """ Perform any functionality that needs to be done on system
@@ -39,10 +47,8 @@ class ModuleCommon:
       # It's for us.
       self._handle_message(message)
 
-  def _handle_message(self, message):
-    """ Handles a received message. Should be overridden by subclasses.
-    Args:
-      message: The received message. """
-    if message.command == serial_talker.Message.Ping:
-      # Respond to Ping requests.
-      self.__handle_ping()
+  def get_id(self):
+    """
+    Returns:
+      The ID of the module. """
+    return self._id

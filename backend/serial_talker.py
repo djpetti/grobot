@@ -186,7 +186,7 @@ class Message:
     self.command = command
     self.source = self.__source
     self.dest = dest
-    self.fields = args
+    self.fields = list(args)
 
   def get_raw(self):
     """ Returns:
@@ -313,9 +313,14 @@ class SerialTalker:
   def write_command(self, *args, **kwargs):
     """ This is really just a convenience method for building a message and
     sending it to the MCU. All arguments are passed transparently to a
-    Message intstance. It is asyncronous, and will return before the data is
+    Message intstance. It is asynchronous, and will return before the data is
     fully sent. """
     message = Message(*args, **kwargs)
+    self.write_existing_message(message)
+
+  def write_existing_message(self, message):
+    """ Writes an already-formed message. It is asynchronous, and will return
+    before the data is fully sent. """
     # Add it to the buffer so we can write when ready.
     self.__write_buffer += message.get_raw()
     # Try writing whatever we can right now.

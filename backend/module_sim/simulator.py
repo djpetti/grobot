@@ -60,26 +60,32 @@ class Simulator:
         logger.debug("Got message: %s" % (message.get_raw()))
 
         # Handle the message.
-        self.__handle_message(message)
+        self.__handle_message(message, None)
 
       # Having a little delay is more realistic.
       time.sleep(0.01)
 
-  def __handle_message(self, message):
-    """ Passes a message to all modules.
+  def __handle_message(self, message, source_module):
+    """ Passes a message to all simulated modules.
     Args:
-      message: The message to handle. """
+      message: The message to handle.
+      source_module: The module that this message is coming from. Can be None if
+                     it's coming from the serial link. """
     for module in self.__modules:
+        if module == source_module:
+          # We never echo back to ourselves.
+          continue
         module.check_and_handle_message(message)
 
-  def write_message(self, command, source, dest, *args):
+  def write_message(self, command, source_module, dest, *args):
     """ Creates a writes a message.
     Args:
       command: The command for the message.
-      source: The source address of the message.
+      source_module: The module this message is coming from.
       dest: The destination address of the message.
       All further args will be interpreted as field values. """
-    message = serial_talker.Message(command, dest, *args, source=source)
+    source_id = source_module.get_id()
+    message = serial_talker.Message(command, dest, *args, source=source_id)
 
     if (dest == 1 or dest == 0):
       # If we're sending to Prime, we have to write it onto the serial link. (A
@@ -96,7 +102,7 @@ class Simulator:
     if (dest != 1 or dest == 0):
       # Otherwise, we can save time and just pass it directly to the relevant
       # module.
-      self.__handle_message(message)
+      self.__handle_message(message, source_module)
 
   def get_serial_name(self):
     """
