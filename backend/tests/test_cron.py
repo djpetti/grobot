@@ -6,10 +6,11 @@ import tornado.gen
 import tornado.ioloop
 import tornado.testing
 
-from . import test_serial
 from .. import cron
 from .. import serial_talker
 from .. import state
+
+from . import test_serial
 
 
 """ Tests the periodic jobs. """
