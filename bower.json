@@ -25,7 +25,8 @@
     "iron-image": "PolymerElements/iron-image#^1.2.5",
     "paper-button": "PolymerElements/paper-button#^1.0.14",
     "polymer-redux": "^0.4.0",
-    "redux": "https://npmcdn.com/redux/dist/redux.js"
+    "redux": "https://npmcdn.com/redux/dist/redux.js",
+    "redux-saga": "https://unpkg.com/redux-saga/dist/redux-saga.min.js"
   },
   "devDependencies": {
     "web-component-tester": "^4.0.0"
