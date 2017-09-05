@@ -1,4 +1,4 @@
-#How to Contribute to this Project
+# How to Contribute to this Project
 
 Generally, this project follows a pretty standard GitHub workflow: If you make a
 change, submit a pull request, and we'll review it. If we ask you to change
@@ -7,7 +7,12 @@ contribute to it until it gets closed. Also, please, please PLEASE search for
 duplicate pull requests/issues *before* you submit a new one! It makes
 everyone's life, including yours, a whole lot easier.
 
-##Styleguides
+## Getting Started
+
+For more detailed instructions on how to get started, please see [this wiki
+page.](https://github.com/djpetti/grobot/wiki/Getting-Started)
+
+## Styleguides
 
 We do believe in styleguides around here. We suggest that you familiarize
 yourself with them before contributing. Code that does not follow the
