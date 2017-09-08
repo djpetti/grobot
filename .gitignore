@@ -93,6 +93,7 @@ ENV/
 
 # KiCad files.
 *.bak
+*.bck
 *-cache.lib
 # Bower stuff.
 bower_components/
