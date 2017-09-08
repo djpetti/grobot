@@ -1,0 +1,33 @@
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../bower_components/paper-dialog/paper-dialog.html">
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/neon-animation/animations/scale-up-animation.html">
+<link rel="import" href="../bower_components/neon-animation/animations/fade-out-animation.html">
+<link rel="import" href="shared-styles.html">
+
+<dom-module id="gb-error-modal">
+  <template>
+    <style include="shared-styles">
+      .modal-image {
+        width: 400px;
+        height: 711px;
+      }
+    </style>
+
+    <paper-dialog id="errorDialog" entry-animation="scale-up-animation"
+                  exit-animation="fade-out-animation">
+      <iron-image class="modal-image" style="padding: 0px; margin: 0px;"
+       src="/images/grobot-broken.svg"></iron-image>
+      <div class="buttons">
+        <paper-button>Details...</paper-button>
+        <paper-button dialog-confirm autofocus>Accept</paper-button>
+      </div>
+    </paper-dialog>
+
+  </template>
+
+  <!-- TODO (danielp): This is terrible. Get babel or something working so we
+  use modules. -->
+  <script src="js/gb-error-modal.js"></script>
+
+</dom-module>

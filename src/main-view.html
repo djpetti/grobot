@@ -1,0 +1,120 @@
+<link rel="import" href="../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+<link rel="import" href="../bower_components/iron-image/iron-image.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../bower_components/paper-card/paper-card.html">
+<link rel="import" href="../bower_components/paper-dialog/paper-dialog.html">
+<link rel="import" href="../bower_components/paper-listbox/paper-listbox.html">
+<link rel="import" href="../bower_components/paper-item/paper-item.html">
+<link rel="import" href="../bower_components/paper-item/paper-item-body.html">
+<link rel="import" href="../bower_components/paper-item/paper-icon-item.html">
+<link rel="import" href="../bower_components/paper-progress/paper-progress.html">
+<link rel="import" href="../bower_components/paper-styles/typography.html">
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/neon-animation/animations/scale-up-animation.html">
+<link rel="import" href="../bower_components/neon-animation/animations/fade-out-animation.html">
+<link rel="import" href="gb-action-panel.html">
+<link rel="import" href="gb-error-modal.html">
+<link rel="import" href="shared-styles.html">
+
+<dom-module id="main-view">
+  <template>
+    <style include="shared-styles">
+      :host {
+        display: block;
+        padding: 10px;
+      }
+
+      .grouph[wide-layout] {
+        @apply(--layout-horizontal);
+        @apply(--layout-wrap);
+        @apply(--layout-center-justified);
+
+        width: 100%;
+      }
+
+      .grouph:not([wide-layout]) {
+        @apply(--layout-vertical);
+        @apply(--layout-center);
+      }
+
+      .grow-icon {
+        width: 60px;
+        height: 60px;
+        float: right;
+        vertical-align: middle;
+        margin-bottom: 10px;
+      }
+
+      .heading-white {
+        --paper-card-header-color: #FFFFFF;
+      }
+
+      .grow-progress {
+        --paper-progress-active-color: #21DB67;
+
+        width: 90%;
+        margin-top: 10px;
+      }
+    </style>
+
+    <iron-media-query query="(min-width: 1000px)" query-matches="{{wide}}"></iron-media-query>
+    <div class="grouph" wide-layout$="[[wide]]">
+
+      <gb-action-panel id="actionPanel"></gb-action-panel>
+
+      <paper-card class="column-card heading-white" heading="Growing Progress"
+                  image="../images/plants-growing.svg" alt="Plants Growing"
+                  wide-layout$="[[wide]]">
+        <div class="card-content">
+          <paper-listbox>
+            <paper-item>
+              <paper-item-body two-line>
+                <div class="status-item-title">Lettuce</div>
+                <div class="text-light">10 days remaining.</div>
+                <paper-progress class="grow-progress" value="60" min="0" max="100"></paper-progress>
+              </paper-item-body>
+              <paper-item-icon>
+                <iron-image class="grow-icon" src="../images/icon_lettuce.svg" alt="lettuce icon">
+                </iron-image>
+              </paper-item-icon>
+            </paper-item>
+            <paper-item>
+              <paper-item-body>
+                <div class="status-item-title">Basil</div>
+                <div class="text-light">30 days remaining.</div>
+                <paper-progress class="grow-progress" value="10" min="0" max="100"></paper-progress>
+              </paper-item-body>
+              <paper-item-icon>
+                <iron-image class="grow-icon" src="../images/icon_basil.svg" alt="basil icon">
+                </iron-image>
+              </paper-item-icon>
+            </paper-item>
+            <paper-item>
+              <paper-item-body>
+                <div class="status-item-title">Kale</div>
+                <div class="text-light">22 days remaining.</div>
+                <paper-progress class="grow-progress" value="35" min="0" max="100"></paper-progress>
+              </paper-item-body>
+              <paper-item-icon>
+                <iron-image class="grow-icon" src="../images/icon_kale.svg" alt="kale icon">
+                </iron-image>
+              </paper-item-icon>
+            </paper-item>
+          </paper-listbox>
+        </div>
+      </paper-card>
+    </div>
+
+    <gb-error-modal id="errorDialog"></gb-error-modal>
+
+  </template>
+
+  <script>
+    Polymer({
+      is: 'main-view',
+      ready: function() {
+        main.initMain();
+      }
+    });
+  </script>
+</dom-module>

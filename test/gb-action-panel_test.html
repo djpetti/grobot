@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, user-scalable=yes">
+
+    <title>test_el-element test</title>
+
+    <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+    <script src="../../web-component-tester/browser.js"></script>
+    <script src="../bower_components/polymer-redux/polymer-redux.js"></script>
+    <script src="../bower_components/redux/index.js"></script>
+    <script src="../bower_components/redux-saga/index.js"></script>
+    <script src="../src/js/actions.js"></script>
+    <script src="../src/js/main.js"></script>
+
+    <script src="fake_redux.js"></script>
+
+    <link rel="import" href="../src/gb-action-panel.html">
+    <link rel="import" href="../src/gb-action-panel-item.html">
+  </head>
+  <body>
+    <test-fixture id="gbActionPanelFixture">
+      <template>
+        <gb-action-panel></gb-action-panel>
+      </template>
+    </test-fixture>
+
+    <script>
+      suite('<gb-action-panel>', function() {
+        var element = null;
+
+        setup(function() {
+          // Initialize mock Redux state for testing.
+          fakeRedux.store.initFakeState();
+
+          // This only works in the setup() function...
+          element = fixture('gbActionPanelFixture');
+          // Set the panel in the fake state.
+          let fakeStore = main.getReduxStore();
+          let fakeState = fakeStore.getState();
+          fakeState.actionPanel.actionPanel = element;
+          fakeStore.setState(fakeState);
+        });
+
+        /** Helper function that adds a new item to the action panel, and
+         * updates the fake Redux state accordingly.
+         * @private
+         * @param title The title of the item.
+         * @param description The description of the item.
+         * @param level The level of the item.
+         * @param id A unique ID for the item.
+         * @returns The added item node. */
+        addItem_ = function(title, description, level, id) {
+          const item = element.addItem(title, description, level, id);
+          let fakeState = main.getReduxStore().getState();
+
+          // Add to the fake state.
+          fakeState.actionPanel.items[id] = item;
+          switch (level) {
+            case 'normal':
+              ++fakeState.actionPanel.numNormal;
+              break;
+            case 'warning':
+              ++fakeState.actionPanel.numWarning;
+              break;
+            case 'error':
+              ++fakeState.actionPanel.numError;
+              break;
+            default:
+              console.error('Testing: unknown level: ' + level);
+              break;
+          }
+
+          main.getReduxStore().setState(fakeState);
+
+          return item;
+        };
+
+        /** Helper function that removes an item from the action panel, and
+         * updates the fake Redux state accordingly.
+         * @private
+         * @param id The unique ID of the item to remove. */
+        removeItem_ = function(id) {
+          // First, get the node, which should already be set in the fake state.
+          const node = main.getReduxStore().getState().actionPanel.items[id];
+          // Now, remove the node.
+          element.removeItem(node);
+        };
+
+        /** Helper function that ensures that items are correctly sorted by
+         * level.
+         * @private
+         * @param num_children How many children we expect to have.
+         * @returns True if everything is sorted correctly and we have the
+         *          expected number of children, false otherwise. */
+        checkOrder_ = function(num_children) {
+          let children = Polymer.dom(element).children;
+          if (children.length != num_children) {
+            // Does not have expected number of children.
+            return false;
+          }
+
+          let saw_error = false;
+          let saw_warning = false;
+          let saw_normal = false;
+
+          for (i = 0; i < children.length; ++i) {
+            switch (children[i].getLevel()) {
+              case 'error':
+                if (saw_warning || saw_normal) {
+                  // Error after warning or normal.
+                  return false;
+                }
+                saw_error = true;
+                break;
+
+              case 'warning':
+                if (saw_normal) {
+                  // Warning after normal.
+                  return false;
+                }
+                saw_warning = true;
+                break;
+
+              case 'normal':
+                saw_normal = true;
+                break;
+            }
+          }
+
+          return true;
+        };
+
+        test('instantiating the element works', function(done) {
+          assert.equal(element.is, 'gb-action-panel');
+          const dispatchedActions = main.getReduxStore().getDispatchedActions();
+
+          // Make sure we dispatched the SET_ACTION_PANEL action on creation.
+          assert.equal(1, dispatchedActions.length);
+          assert.equal(dispatchedActions[0].type, actions.SET_ACTION_PANEL);
+          assert.equal(element, dispatchedActions[0].actionPanel);
+
+          done();
+        });
+
+        test('added elements are there and in correct order', function(done) {
+          // No items initially...
+          assert.isTrue(checkOrder_(0));
+
+          // Try adding an item to the panel.
+          addItem_('Test', 'Test item', 'normal', 't1');
+          // We should end up with a new element in the dom.
+          assert.isTrue(checkOrder_(1));
+
+          // Try adding an error element, which should go above it.
+          addItem_('Error', 'Test item', 'error', 't2');
+          assert.equal(2, Polymer.dom(element).children.length);
+          // Check the ordering.
+          assert.isTrue(checkOrder_(2));
+
+          // Try adding a warning element, which should go in between.
+          addItem_('Warning', 'Test item', 'warning', 't3');
+          assert.isTrue(checkOrder_(3));
+
+          // Try adding another warning element.
+          addItem_('Warning 2', 'Test item', 'warning', 't4');
+          checkOrder_(4);
+
+          // Try adding another error element.
+          addItem_('Error 2', 'Test item', 'error', 't5');
+          assert.isTrue(checkOrder_(5));
+
+          // Try adding another normal element.
+          addItem_('Normal 2', 'Test item', 'normal', 't6');
+          assert.isTrue(checkOrder_(6));
+
+          done();
+        });
+
+        test('a corner case: add warning with no errors', function(done) {
+          // No items initially...
+          assert.isTrue(checkOrder_(0));
+
+          // Add a normal item.
+          addItem_('Test', 'Test item', 'normal', 't1');
+          assert.isTrue(checkOrder_(1));
+
+          // Add a warning item and check the ordering.
+          addItem_('Warning', 'Test item', 'warning', 't2');
+          assert.isTrue(checkOrder_(2));
+
+          done();
+        });
+
+        test('a corner case: add warning with no normal items', function(done) {
+          // No items initially...
+          assert.isTrue(checkOrder_(0));
+
+          // Add an error item.
+          addItem_('Error', 'Test item', 'error', 't1');
+          assert.isTrue(checkOrder_(1));
+
+          // Add a warning item.
+          addItem_('Warning', 'Test item', 'warning', 't2');
+          assert.isTrue(checkOrder_(2));
+
+          done();
+        });
+
+        test('we can remove action panel items', function(done) {
+          // No items initially...
+          checkOrder_(0);
+
+          // Add some items.
+          addItem_('Test', 'Test item', 'normal', 't1');
+          addItem_('Warning', 'Test item', 'warning', 't2');
+          assert.isTrue(checkOrder_(2));
+
+          // Remove one of them.
+          removeItem_('t1');
+          assert.isTrue(checkOrder_(1));
+
+          // Remove the other too.
+          removeItem_('t2');
+          assert.isTrue(checkOrder_(0));
+
+          done();
+        });
+
+        test('the Saga for adding items works', function(done) {
+          // Try with a simple action.
+          const testAction = actions.addPanelItem('Test', 'Test item', 'error',
+                                                  't1');
+
+          // Prime the state with an error message so that we can test how it
+          // handles the summary level.
+          let fakeState = main.getReduxStore().getState();
+          fakeState.actionPanel.summaryLevel = testAction.level;
+          main.getReduxStore().setState(fakeState);
+
+          gen = gbActionPanel.sagas.addSaga_(testAction);
+          next = gen.next();
+
+          // We don't know what the node object is going to be set to here, so
+          // we have to extract it.
+          const gotAction = next.value.PUT.action;
+          const gotNode = gotAction.item;
+          // Now, construct a new effect to compare it to.
+          const expectedAction = actions.updatePanelItemList(testAction.id,
+                                                             gotNode);
+          const expectedEffect = ReduxSaga.effects.put(expectedAction);
+          assert.deepEqual(expectedEffect, next.value);
+
+          // Make sure the summary level got set correctly.
+          assert.deepEqual(gbActionPanelItem.ICON_URLS[testAction.level],
+                           element.$.statusIcon.src);
+
+          // It should be done now.
+          next = gen.next();
+          assert.equal(undefined, next.value);
+          assert.isTrue(next.done);
+
+          done();
+        });
+
+        test('the Saga for removing items works.', function(done) {
+          // Create a removal action for the item we will add.
+          const testAction = actions.removePanelItem('t1');
+          // Add the item.
+          addItem_('Test', 'Test item', 'error', testAction.id);
+
+          // Prime the state with an error message so that we can test how it
+          // handles the summary level.
+          let fakeState = main.getReduxStore().getState();
+          fakeState.actionPanel.summaryLevel = 'error';
+          main.getReduxStore().setState(fakeState);
+
+          // Now make sure the removal saga works.
+          gen = gbActionPanel.sagas.removeSaga_(testAction);
+          next = gen.next();
+
+          const expectedAction = actions.updatePanelItemList(testAction.id,
+                                                             null);
+          const expectedEffect = ReduxSaga.effects.put(expectedAction);
+          assert.deepEqual(expectedEffect, next.value);
+
+          // Make sure the summary level got set as expected.
+          assert.deepEqual(gbActionPanelItem.ICON_URLS['error'],
+                           element.$.statusIcon.src);
+
+          // It should be done now.
+          next = gen.next();
+          assert.equal(undefined, next.value);
+          assert.isTrue(next.done);
+
+          done();
+        });
+      });
+    </script>
+  </body>
+</html>
