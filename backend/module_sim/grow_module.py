@@ -11,18 +11,24 @@ logger = logging.getLogger(__name__)
 class GrowModule(module_common.ModuleCommon):
   """ Simulates a grow module controller. """
 
-  def __init__(self, *args, **kwargs):
+  def __init__(self, *args, permanent_id=0, **kwargs):
+    """
+    Args:
+      permanent_id: Allows the user to specify a permanend ID for this module.
+                    None is specified, it will act as if the permanent ID is not
+                    set. """
     super().__init__(*args, **kwargs)
 
     # The ID of a Grow Module defaults to 3.
     self._id = 3
+    self.__permanent_id = permanent_id
     # Whether we've written our discovery message yet.
     self.__sent_imalive = False
 
   def on_startup(self):
     """ See superclass documentation. """
     # Send the initial discovery message.
-    self._write_message(serial_talker.Message.ImAlive, 0)
+    self._write_message(serial_talker.Message.ImAlive, 0, self.__permanent_id)
     self.__sent_imalive = True
 
   def _handle_message(self, message):

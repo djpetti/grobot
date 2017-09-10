@@ -90,8 +90,9 @@ class TestSimulator(SimulatorTestBase):
     """ Tests that we can handle a ping command on the grow module. """
     self._start_simulator(1)
 
-    # We first expect to receive a discovery message.
-    expected = serial_talker.Message(serial_talker.Message.ImAlive, 0,
+    # We first expect to receive a discovery message. The zero field is because
+    # the permanent ID defaults to zero.
+    expected = serial_talker.Message(serial_talker.Message.ImAlive, 0, "0",
                                      source=3)
     self._wait_for_message(expected)
 
@@ -123,7 +124,7 @@ class TestSimulator(SimulatorTestBase):
     # We expect to receive 3 discovery messages. (All the modules will have
     # their IDs set to 3 initially, so it will look like they are coming from
     # the same source.)
-    disc_expected = serial_talker.Message(serial_talker.Message.ImAlive, 0,
+    disc_expected = serial_talker.Message(serial_talker.Message.ImAlive, 0, "0",
                                           source=3)
     # Wait for all three of them, in an arbitrary order.
     self._wait_for_message(disc_expected, expect_number=3)
