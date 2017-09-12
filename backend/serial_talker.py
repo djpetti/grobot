@@ -157,6 +157,11 @@ class Message:
   SendSensorStatus = "ENSTAT"
   # Sets the permanent ID of a module.
   SetPermanentId = "SETPERMID"
+  # Gets the permanent ID of a module. The response to this command will be a
+  # command of the same type with the ID as one of the fields. Since ImAlive
+  # also sends the permanent ID, this is used mostly for testing and debugging
+  # and not for normal system operation.
+  GetPermanentId = "GETPERMID"
 
   def __init__(self, *args, source=1):
     """ Checks the number of arguments, and defers to the proper method for

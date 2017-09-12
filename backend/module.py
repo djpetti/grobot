@@ -156,3 +156,7 @@ class ModuleInterface:
     Returns:
       The set of modules currently attached. """
     return self.__modules
+
+  def clear_modules(self):
+    """ Clears all the currently managed modules. """
+    self.__modules.clear()

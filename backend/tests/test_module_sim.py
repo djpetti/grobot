@@ -1,5 +1,7 @@
 import logging
 
+import tornado.ioloop
+
 from ..module_sim import base_module
 from ..module_sim import grow_module
 from ..module_sim import simulator
@@ -17,19 +19,25 @@ logger = logging.getLogger(__name__)
 class SimulatorTestBase(base_test.BaseTest):
   """ Base class for tests that use the module simulator. """
 
-  def _start_simulator(self, num_grow_modules):
+  def _start_simulator(self, num_grow_modules, **kwargs):
     """ Starts the simulator running.
     Args:
-      num_grow_modules: How many grow modules to add. 0 is acceptable. """
+      num_grow_modules: How many grow modules to add. 0 is acceptable.
+      Any kwargs will be forwarded to the add_module function. """
     # Add the base module.
     self.__sim.add_module(base_module.BaseModule)
 
     # Add as many grow modules as needed.
     for _ in range(0, num_grow_modules):
-      self.__sim.add_module(grow_module.GrowModule)
+      self.__sim.add_module(grow_module.GrowModule, **kwargs)
 
     # Start the simulation running.
     self.__sim.start()
+
+  def _reset_simulator(self):
+    """ Stops and resets the simulator. """
+    self.__sim.force_exit()
+    self.__sim.clear_modules()
 
   def _wait_for_message(self, expected_message, prompt=None, expect_number=1):
     """ A utility function that waits to receive an expected message from the
@@ -63,11 +71,11 @@ class SimulatorTestBase(base_test.BaseTest):
     # Initialize serial connection with simulator.
     device_name = self.__sim.get_serial_name()
     self._serial = serial_talker.SerialTalker(115200, device=device_name,
-                                               ioloop=self.io_loop)
+                                              ioloop=self.io_loop)
     logger.info("Initialized connection to simulator.")
 
   def tearDown(self):
-    self.__sim.force_exit()
+    self._reset_simulator()
     self._serial.cleanup()
 
     super().tearDown()
@@ -145,3 +153,32 @@ class TestSimulator(SimulatorTestBase):
                                      source=5)
     prompt = serial_talker.Message("PING", 5)
     self._wait_for_message(expected, prompt=prompt)
+
+  def test_permanent_ids(self):
+    """ Tests that permanent ID simulation works. """
+    self._start_simulator(1)
+
+    # It should default to zero if we don't set it explicitly.
+    disc_expected = serial_talker.Message(serial_talker.Message.ImAlive, 0, "0",
+                                          source=3)
+    self._wait_for_message(disc_expected)
+
+    self._reset_simulator()
+
+    # We should be able to set it explicitly, though.
+    self._start_simulator(1, permanent_id=42)
+
+    disc_expected = serial_talker.Message(serial_talker.Message.ImAlive, 0,
+                                          "42", source=3)
+    self._wait_for_message(disc_expected)
+
+    # We should also be able to change it after-the-fact.
+    self._serial.write_command(serial_talker.Message.SetPermanentId, 3, 1337)
+
+    # Check that it got set.
+    perm_id_expected = \
+        serial_talker.Message(serial_talker.Message.GetPermanentId, 1, "1337",
+                              source=3)
+    perm_id_prompt = serial_talker.Message(serial_talker.Message.GetPermanentId,
+                                           3)
+    self._wait_for_message(perm_id_expected, prompt=perm_id_prompt)
