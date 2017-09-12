@@ -133,3 +133,8 @@ class Simulator:
     # Fork off a separate process that does the simulation.
     self.__sim_process = Process(target=self.__run)
     self.__sim_process.start()
+
+  def clear_modules(self):
+    """ Removes all currently added modules. """
+    self.__modules.clear()
+    logger.info("Cleared simulated modules.")

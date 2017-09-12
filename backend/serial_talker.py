@@ -139,7 +139,9 @@ class Message:
   Ping = "PING"
   # An IMALIVE command is the first thing sent out by modules when
   # they finish initializing. It is used in the module discovery
-  # process.
+  # process. This message should always have one argument, which is the
+  # permanent ID of the module sending it. That can also be 0 if the module
+  # does not have a permanent ID set.
   ImAlive = "IMALIVE"
   # A SetLedBrightness command does pretty much what the name implies.
   SetLedBrightness = "SETLED"
@@ -153,6 +155,13 @@ class Message:
   # should be send regularly from the MCU. Prime can disable these if it is not
   # in a position to handle them.
   SendSensorStatus = "ENSTAT"
+  # Sets the permanent ID of a module.
+  SetPermanentId = "SETPERMID"
+  # Gets the permanent ID of a module. The response to this command will be a
+  # command of the same type with the ID as one of the fields. Since ImAlive
+  # also sends the permanent ID, this is used mostly for testing and debugging
+  # and not for normal system operation.
+  GetPermanentId = "GETPERMID"
 
   def __init__(self, *args, source=1):
     """ Checks the number of arguments, and defers to the proper method for
@@ -313,7 +322,7 @@ class SerialTalker:
   def write_command(self, *args, **kwargs):
     """ This is really just a convenience method for building a message and
     sending it to the MCU. All arguments are passed transparently to a
-    Message intstance. It is asynchronous, and will return before the data is
+    Message instance. It is asynchronous, and will return before the data is
     fully sent. """
     message = Message(*args, **kwargs)
     self.write_existing_message(message)
