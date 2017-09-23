@@ -90,7 +90,7 @@ def setup_container():
   """ Run setup for containerized deployment.
   Returns:
     Handle to xvfb process. """
-  print("Starting xvfb...")
+  print("Setting up container...")
 
   # The DISPLAY variable should be set in the container.
   display = os.environ["DISPLAY"]
@@ -126,6 +126,45 @@ def teardown_container(xvfb):
   if os.path.exists("bower_components-user"):
     shutil.move("bower_components-user", "bower_components")
 
+def setup_mongo():
+  """ Initializes a mongodb instance for testing.
+  Returns:
+    Handle to the mongod process. """
+  print("Starting mongodb...")
+
+  # Make a directory for the test database.
+  if os.path.exists("grobot_test_db"):
+    shutil.rmtree("grobot_test_db")
+  os.mkdir("grobot_test_db")
+
+  # Run mongo. We change the default port so that it is less likely
+  # to interfere with another mongo instance that the user is running.
+  mongo = subprocess.Popen(["mongod", "--dbpath", "grobot_test_db", "--port",
+                            "27018"])
+
+  # Give it a second to start.
+  time.sleep(0.5)
+  if mongo.poll():
+    # It exited prematurely.
+    print("ERROR: mongod failed to start!")
+    sys.exit(1)
+
+  return mongo
+
+def teardown_mongo(mongo):
+  """ Stops mongo and cleans up after testing.
+  Args:
+    mongo: The running mongo instance for testing. """
+  # Stop the process.
+  mongo.terminate()
+  # Wait for it to finish.
+  print("Waiting for mongod to end...")
+  mongo.wait()
+
+  # Clean up the database directory.
+  shutil.rmtree("grobot_test_db")
+
+
 def main():
   parser = argparse.ArgumentParser( \
       description="Run and test the web application.")
@@ -153,13 +192,20 @@ def main():
   if args.containerized:
     xvfb = setup_container()
 
+  # Start mongo.
+  mongo = setup_mongo()
+
   # Run the tests.
   if not run_all_tests(args.keep_open):
     if not args.force:
       print("ERROR: Tests failed, not continuing.")
+      teardown_mongo(mongo)
       sys.exit(1)
     else:
       print("WARNING: Tests failed, but continuing anyway.")
+
+  # Stop mongo.
+  teardown_mongo(mongo)
 
   if args.containerized:
     teardown_container(xvfb)

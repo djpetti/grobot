@@ -20,7 +20,7 @@ class ModuleTest(base_test.BaseTest):
     super().setUp()
 
     # Make a module for testing.
-    self.__module = module.Module(-1, -1)
+    self.__module = module.Module(self._db.modules, -1, -1)
 
   def test_increment(self):
     """ Tests that the ID incrementing functionality works. """
@@ -51,7 +51,7 @@ class ModuleInterfaceTest(test_module_sim.SimulatorTestBase):
 
     # Make a module interface using the serial connection from the simulated
     # modules.
-    self.__stack = module.ModuleInterface(self._serial)
+    self.__stack = module.ModuleInterface(self._serial, self._db)
 
   def test_discovery(self):
     """ Make sure module discovery works properly. """
