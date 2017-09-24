@@ -10,6 +10,8 @@ import tornado.testing
 from .. import server
 from .. import websocket
 
+from . import fake_db
+
 
 logger = logging.getLogger(__name__)
 
@@ -18,28 +20,11 @@ class _BaseTestMixin:
   """ A testing mixin. This does stuff that is common to all testing classes in
   this file. """
 
-  def __init_database(self):
-    """ Initializes a mongo database for testing. """
-    client = motor.motor_tornado.MotorClient("localhost", 27018)
-
-    my_ioloop = self.get_new_ioloop()
-
-    # Clear the database completely to prevent interference between tests.
-    @tornado.gen.coroutine
-    def drop_database():
-      """ Helper function to drop the database. """
-      result = client.drop_database("grobot_test_database")
-      return result
-    my_ioloop.run_sync(drop_database)
-    my_ioloop.close()
-
-    self._db = client.grobot_test_database
-
   def setUp(self):
     # Some of the default tornado test classes need the database to be
     # functional when they initialize the app, so we do that here before we call
     # them.
-    self.__init_database()
+    self._db = fake_db.FakeDatabase()
 
     # Since this is a mixin, we have to initialize the next thing in the MRO.
     super().setUp()
