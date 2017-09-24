@@ -1,20 +1,32 @@
 import collections
 import logging
 
+import motor.motor_tornado
+
 import tornado.gen
+import tornado.ioloop
 import tornado.testing
 
 from .. import server
 from .. import websocket
+
+from . import fake_db
 
 
 logger = logging.getLogger(__name__)
 
 
 class _BaseTestMixin:
-  """ A testing mixin. Right now, it just initializes logging. """
+  """ A testing mixin. This does stuff that is common to all testing classes in
+  this file. """
 
   def setUp(self):
+    # Some of the default tornado test classes need the database to be
+    # functional when they initialize the app, so we do that here before we call
+    # them.
+    self._db = fake_db.FakeDatabase()
+
+    # Since this is a mixin, we have to initialize the next thing in the MRO.
     super().setUp()
 
     # Initialize logging.
@@ -102,7 +114,7 @@ class BaseHttpTest(_BaseTestMixin, tornado.testing.AsyncHTTPTestCase):
     Returns:
       The app to use for testing. """
     # We can just use all the default settings.
-    return server.make_app({})
+    return server.make_app({}, self._db)
 
 class BaseWebSocketTest(BaseHttpTest):
   """ Convenience class for writing a test that uses a websocket. """

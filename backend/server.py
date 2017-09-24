@@ -6,6 +6,8 @@ import logging
 import os
 import sys
 
+import motor.motor_tornado
+
 import tornado.ioloop
 import tornado.web
 
@@ -40,10 +42,11 @@ _configure_logging()
 logger = logging.getLogger(__name__)
 
 
-def make_app(settings, dev_mode=False):
+def make_app(settings, db, dev_mode=False):
   """ Creates the tornado application.
   Args:
     settings: The settings loaded from the settings file.
+    db: The database we will be using in this application.
     dev_mode: If set to True, will serve data from the base directory instead of
               the build directory. This is useful for testing.
   Returns:
@@ -69,7 +72,7 @@ def make_app(settings, dev_mode=False):
       (r"/(manifest\.json)", tornado.web.StaticFileHandler, root_path),
       (r"/(app_socket)", websocket.GrobotWebSocket),
       (r"/(.*)", tornado.web.StaticFileHandler, root_path)],
-      **settings)
+      **settings, db=db)
 
   return app
 
@@ -91,6 +94,21 @@ def make_serial(settings):
     pass
 
   return serial
+
+def make_database(settings):
+  """ Initializes the database connection.
+  Args:
+    settings: The settings loaded from the settings file.
+  Returns:
+    The configured database connection. """
+  db_host = settings.get("db_host", "localhost")
+  db_port = settings.get("db_port", 27017)
+  client = motor.motor_tornado.MotorClient(db_host, db_port)
+  db = client.grobot_database
+
+  logger.info("Connecting to database on %s:%d." % (db_host, db_port))
+
+  return db
 
 
 def main(dev_mode=False, override_settings={}):
@@ -114,7 +132,10 @@ def main(dev_mode=False, override_settings={}):
   settings = {**settings, **override_settings}
   logger.info("Loaded settings.")
 
-  app = make_app(settings, dev_mode=dev_mode)
+  # Initialize database.
+  db = make_database(settings)
+
+  app = make_app(settings, db, dev_mode=dev_mode)
   # Initialize serial subsystem.
   serial = make_serial(settings)
 

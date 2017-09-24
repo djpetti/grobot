@@ -1,23 +1,126 @@
 import logging
 import random
 
+from tornado.ioloop import IOLoop
+import tornado.gen
+
+from pymongo import ReturnDocument
+
 from .serial_talker import Message
 
 
 logger = logging.getLogger(__name__)
 
 
-class Module:
-  """ Represents a single module. """
+class DbError(Exception):
+  """ Used when a database operation fails. """
+  pass
 
-  def __init__(self, module_id, permanent_id):
+
+class _ModuleDatabaseHelper:
+  """ A base class for Module concerned specifically with database operations.
+  This class exists mainly to split out some of the Module functionality and
+  to make the Module class less unweildy. """
+
+  def __init__(self, module_col):
     """
     Args:
+      module_col: The module database collection. """
+    self._col = module_col
+
+  def __find_module(self):
+    """ Finds a module by its permanent ID in the
+    database.
+    Returns:
+      The found module future, or None if it found nothing. The result of this
+      function is meant to be yielded from a coroutine. """
+    query = {"permanent_id": self._permanent_id}
+    return self._col.find_one(query)
+
+  def __get_module_document(self):
+    """
+    Returns:
+      A representation of the module that can be stored in the database. """
+    module_doc = {"permanent_id": self._permanent_id}
+    return module_doc
+
+  def __set_module_from_document(self, module_doc):
+    """ Sets a module's parameters from a document read out of the database.
+    Args:
+      module_doc: The module document. """
+    logger.debug("Setting module params from: %s" % (module_doc))
+    # We don't have anything to set yet, so this doesn't do anything.
+
+  def _add_or_update_module_in_db(self):
+    """ Will either update the existing entry for this module in the database,
+    or add a new one if it does not exist yet. This executes database operations
+    in a fire-and-forget sort of fashion. (Errors will be logged.) """
+    @tornado.gen.coroutine
+    def do_update():
+      """ Performs the actual update. See the documentation of the enclosing
+      function. """
+      # Get the document to set in the database.
+      module_doc = self.__get_module_document()
+
+      # Update or create a new document.
+      query = {"permanent_id": self._permanent_id}
+      update = {"$set": module_doc}
+      new_doc = yield self._col.find_one_and_update(query, update, upsert=True,
+                          return_document=ReturnDocument.AFTER)
+      logger.debug("New module document: %s" % (new_doc))
+
+      if not new_doc:
+        # A failed update.
+        error = "Failed to update document for module %d." % \
+                (self._permanent_id)
+        logger.Error(error)
+        raise DbError(error)
+
+    # Perform this asynchronously using the ioloop.
+    IOLoop.current().spawn_callback(do_update)
+
+  def _configure_from_db(self):
+    """ Reads the module configuration out of the database, and updates the
+    module accordingly. If it can't find the module, it will make no changes.
+    This executes in a fire-and-forget fashion. (Errors will be logged.) """
+    @tornado.gen.coroutine
+    def do_configure():
+      """ Performs the actual configuration. See documentation of the enclosing
+      function. """
+      # Look for the document.
+      existing_doc = yield self.__find_module()
+
+      if not existing_doc:
+        # Technically, it's possible to get here, because Mongo aknowledges the
+        # write before it's written to disk. However, this will only really
+        # happen when we just created the document, in which case, we don't have
+        # any data for this module anyway.
+        logger.debug("No Mongo document for module. Asuming new.")
+        return
+
+      logger.debug("Will set module %d config from database." % \
+                   (self._permanent_id))
+      self.__set_module_from_document(existing_doc)
+
+    # Perform this asynchronously using the ioloop.
+    IOLoop.current().spawn_callback(do_configure)
+
+
+class Module(_ModuleDatabaseHelper):
+  """ Represents a single module. """
+
+  def __init__(self, module_col, module_id, permanent_id):
+    """
+    Args:
+      module_col: The module collection in the database to use.
       module_id: The module's ID, which is also it's I2C slave address.
       permanent_id: The module's permanent ID, which is stored in flash, and
                     generally set only once during the module's lifetime. """
+    super().__init__(module_col)
+
+    # Initialize these to something bogus so the logging works.
     self.__id = -1
-    self.__permanent_id = -1
+    self._permanent_id = -1
 
     self.set_id(module_id)
     self.set_permanent_id(permanent_id)
@@ -47,36 +150,44 @@ class Module:
     randomly-generated 32-bit number, and is used to uniquely identify modules
     so that module-related information can be stored accross power cycles. This
     method generates a new one. The generated permanent ID is automatically set
-    for this module.
+    for this module, and written into the database.
     Returns:
       The generated permanent ID. """
     permanent_id = random.getrandbits(32)
-    self.__permanent_id = permanent_id
+    self.set_permanent_id(permanent_id, new_module=True)
 
-    return self.__permanent_id
+    return self._permanent_id
 
-  def set_permanent_id(self, permanent_id):
-    """ Sets the permanent ID for this module.
+  def set_permanent_id(self, permanent_id, new_module=False):
+    """ Sets the permanent ID for this module. Once this is set, it will try to
+    read the module configuration from the database.
     Args:
-      permanent_id: The new permanent ID. """
-    logger.debug("Changing permanent ID from %d to %d." % (self.__permanent_id,
+      permanent_id: The new permanent ID.
+      new_module: If this is set, it will not bother trying to configure from
+                  database, which can be a nice optimization. """
+    logger.debug("Changing permanent ID from %d to %d." % (self._permanent_id,
                                                            permanent_id))
-    self.__permanent_id = permanent_id
+    self._permanent_id = permanent_id
+
+    # Read our configuration out from the database once we have a permanent ID.
+    if not new_module:
+      self._configure_from_db()
 
   def get_permanent_id(self):
     """
     Returns:
       The currently set permanent ID. """
-    return self.__permanent_id
+    return self._permanent_id
 
 
 class ModuleInterface:
   """ Handles global tasks pertaining to the entire set of modules. """
 
-  def __init__(self, serial):
+  def __init__(self, serial, db):
     """
     Args:
       serial: This is the SerialTalker to use for communicating with modules.
+      db: The database we are using.
     """
     logger.info("Initializing module interface...")
 
@@ -84,6 +195,8 @@ class ModuleInterface:
     self.__modules = set()
     # Serial interface to use for all module communication.
     self.__serial = serial
+    # Database to store module settings.
+    self.__module_collection = db.modules
 
     # Initialize the serial handler.
     self.__serial.add_message_handler(self.__common_handler)
@@ -114,16 +227,17 @@ class ModuleInterface:
       # set permanent ID.
       self.add_module(int(message.fields[0]))
 
-  def add_module(self, permanent_id):
+  def add_module(self, permanent_id, **kwargs):
     """ Adds a new module to the system. The module's permanent ID will also be
     automatically generated if it does not already exist.
     Args:
-      permanent_id: The permanent ID of the module. """
+      permanent_id: The permanent ID of the module.
+      Any other kwargs will be passed transparently to the module constructor. """
     logger.info("Discovered new module.")
 
     # The newest module always gets assigned the lowest ID, which is 3 in this
     # case since 0 is broadcast, 1 is us, and 2 is the BSC.
-    new_module = Module(3, permanent_id)
+    new_module = Module(self.__module_collection, 3, permanent_id, **kwargs)
 
     # Increment all the other module IDs, since this is what they will do upon
     # receipt of the message.

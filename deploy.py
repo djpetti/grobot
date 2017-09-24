@@ -90,7 +90,7 @@ def setup_container():
   """ Run setup for containerized deployment.
   Returns:
     Handle to xvfb process. """
-  print("Starting xvfb...")
+  print("Setting up container...")
 
   # The DISPLAY variable should be set in the container.
   display = os.environ["DISPLAY"]
@@ -125,6 +125,7 @@ def teardown_container(xvfb):
   os.remove("bower_components")
   if os.path.exists("bower_components-user"):
     shutil.move("bower_components-user", "bower_components")
+
 
 def main():
   parser = argparse.ArgumentParser( \
