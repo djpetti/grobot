@@ -109,21 +109,14 @@ class _ModuleDatabaseHelper:
 class Module(_ModuleDatabaseHelper):
   """ Represents a single module. """
 
-  def __init__(self, module_col, module_id, permanent_id,
-               raise_db_errors=False):
+  def __init__(self, module_col, module_id, permanent_id):
     """
     Args:
       module_col: The module collection in the database to use.
       module_id: The module's ID, which is also it's I2C slave address.
       permanent_id: The module's permanent ID, which is stored in flash, and
-                    generally set only once during the module's lifetime.
-      raise_db_errors: By default, it will log database errors, but not throw an
-                       exception. This is generally the desired behavior during
-                       production. However, by setting this parameter to True,
-                       you can make it raise the exceptions. """
+                    generally set only once during the module's lifetime. """
     super().__init__(module_col)
-
-    self._raise_db_errors = raise_db_errors
 
     # Initialize these to something bogus so the logging works.
     self.__id = -1
@@ -162,15 +155,6 @@ class Module(_ModuleDatabaseHelper):
       The generated permanent ID. """
     permanent_id = random.getrandbits(32)
     self.set_permanent_id(permanent_id, new_module=True)
-
-    # Write the change into the database.
-    try:
-      self._add_or_update_module_in_db()
-    except DbError as error:
-      if self._raise_db_errors:
-        # The user has told us to raise this.
-        raise error
-      # Otherwise, continue. It is already logged.
 
     return self._permanent_id
 

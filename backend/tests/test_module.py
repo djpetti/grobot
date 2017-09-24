@@ -43,6 +43,24 @@ class ModuleTest(base_test.BaseTest):
     self.assertEqual(expected, self.__module.gen_permanent_id())
     self.assertEqual(expected, self.__module.get_permanent_id())
 
+  def test_database_config(self):
+    """ Tests that we can configure the module from the database once we have
+    the permanent ID. """
+    # Add a fake document for this module.
+    document = {"permanent_id": 42}
+    self._db.modules.add_document(document)
+    self._db.modules.enable_test_stop(self)
+
+    # Make sure the database gets probed when we set the permanent ID.
+    self.__module.set_permanent_id(42)
+
+    self.wait()
+
+    # The collection should not have changed.
+    documents = self._db.modules.get_documents()
+    self.assertEqual(1, len(documents))
+    self.assertEqual(42, documents[0]["permanent_id"])
+
 class ModuleInterfaceTest(test_module_sim.SimulatorTestBase):
   """ Tests for the ModuleInterface class. """
 

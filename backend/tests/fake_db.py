@@ -58,6 +58,8 @@ class FakeCollection:
 
     # Stores the actual data.
     self.__documents = []
+    # Associated unit test instance.
+    self.__test_instance = None
 
   def __return_future(self, value):
     """ Helper that creates an immediately-read future returning value.
@@ -68,7 +70,7 @@ class FakeCollection:
     future = tornado.concurrent.Future()
     future.set_result(value)
 
-    return future
+    return self.__return_with_test_stop(future)
 
   def __callback_or_return(self, callback, value):
     """ Helper that either runs a callback or returns a value. If callback is
@@ -85,6 +87,18 @@ class FakeCollection:
       return self.__return_future(None)
 
     return self.__return_future(value)
+
+  def __return_with_test_stop(self, value):
+    """ Returns a value and stops the test if needed.
+    Args:
+      value: The value to return.
+    Returns:
+      The value passed in. """
+    if self.__test_instance:
+      # Stop the test.
+      self.__test_instance.stop()
+
+    return value
 
   def __create_document(self):
     """ Helper that creates a new document with a random ObjectId.
@@ -184,3 +198,33 @@ class FakeCollection:
     logger.debug("Update: old doc: %s, new doc: %s" % (old_document, document))
 
     return self.__callback_or_return(callback, to_return)
+
+  def add_document(self, document):
+    """ Adds a document manually to the collection. An ObjectId will
+    automatically be set. Meant to be used for testing.
+    Args:
+      document: The document to add. """
+    # We'll handle the ID by creating a new document, and merging in the
+    # specified one.
+    new_document = self.__create_document()
+    self.__set_in_document(new_document, document)
+
+    logger.debug("Manually adding document: %s" % (new_document))
+    self.__documents.append(new_document)
+
+  def get_documents(self):
+    """ Gets all the documents in the collection. Meant to be used for testing.
+    Returns:
+      All the documents. """
+    return self.__documents
+
+  def enable_test_stop(self, test_instance):
+    """ Enables calling stop() for a unit test after every database operation.
+    Args:
+      test_instance: The instance to call stop() on. """
+    self.__test_instance = test_instance
+
+  def disable_test_stop(self):
+    """ Disables calling stop() for a unit test after every database operation.
+    """
+    self.__test_instance = None
