@@ -6,6 +6,7 @@ import tornado.gen
 
 from pymongo import ReturnDocument
 
+from . import state
 from .serial_talker import Message
 
 
@@ -37,7 +38,7 @@ class _ModuleDatabaseHelper:
     query = {"permanent_id": self._permanent_id}
     return self._col.find_one(query)
 
-  def __get_module_document(self):
+  def _get_module_document(self):
     """
     Returns:
       A representation of the module that can be stored in the database. """
@@ -60,7 +61,7 @@ class _ModuleDatabaseHelper:
       """ Performs the actual update. See the documentation of the enclosing
       function. """
       # Get the document to set in the database.
-      module_doc = self.__get_module_document()
+      module_doc = self._get_module_document()
 
       # Update or create a new document.
       query = {"permanent_id": self._permanent_id}
@@ -125,6 +126,17 @@ class Module(_ModuleDatabaseHelper):
     self.set_id(module_id)
     self.set_permanent_id(permanent_id)
 
+  def __update_state_from_module(self):
+    """ Updates the global state based on the module configuration. """
+    # Get the module document.
+    document = self._get_module_document()
+    # We will index it by the permanent ID in the state.
+    permanent_id = document.pop("permanent_id")
+
+    logger.debug("Updating global state for module %d." % (permanent_id))
+
+    state.get_state().set("modules", permanent_id, document)
+
   def set_id(self, module_id):
     """ Sets a new ID for the module.
     Args:
@@ -167,11 +179,23 @@ class Module(_ModuleDatabaseHelper):
                   database, which can be a nice optimization. """
     logger.debug("Changing permanent ID from %d to %d." % (self._permanent_id,
                                                            permanent_id))
+    old_id = self._permanent_id
     self._permanent_id = permanent_id
 
     # Read our configuration out from the database once we have a permanent ID.
     if not new_module:
       self._configure_from_db()
+
+    # Update the global state.
+    my_state = state.get_state()
+    try:
+      # Remove an existing entry if it's there.
+      my_state.remove("modules", old_id)
+    except KeyError:
+      pass
+
+    # Add the updated entry.
+    self.__update_state_from_module()
 
   def get_permanent_id(self):
     """

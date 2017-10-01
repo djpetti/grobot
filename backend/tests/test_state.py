@@ -34,6 +34,45 @@ class StateTest(base_test.BaseTest):
     my_state.set("test_key", 1)
     self.assertEqual(1, my_state.get("test_key"))
 
+  def test_multi_level(self):
+    """ Tests getting and setting with a more complex state tree. """
+    my_state = state.get_state()
+
+    # Build a simple, two-level tree.
+    my_state.set("test_group", "test_key", 1)
+    self.assertEqual({"test_key": 1}, my_state.get("test_group"))
+    self.assertEqual(1, my_state.get("test_group", "test_key"))
+
+    # Try adding something else on the lower level.
+    my_state.set("test_group", "test_key2", 2)
+    self.assertEqual(1, my_state.get("test_group", "test_key"))
+    self.assertEqual(2, my_state.get("test_group", "test_key2"))
+
+    # Add another level.
+    my_state.set("test_group", "test_inner_group", "test_key3", 3)
+    self.assertEqual(1, my_state.get("test_group", "test_key"))
+    self.assertEqual(2, my_state.get("test_group", "test_key2"))
+    self.assertEqual(3, my_state.get("test_group", "test_inner_group",
+                                     "test_key3"))
+
+  def test_remove(self):
+    """ Tests that we can remove items from the state. """
+    my_state = state.get_state()
+
+    # Add some items.
+    my_state.set("test_key", 1)
+    my_state.set("test_group", "test_key2", 2)
+
+    # Try removing.
+    my_state.remove("test_group")
+    self.assertRaises(KeyError, my_state.get, "test_group")
+    # The first one should still be there.
+    self.assertEqual(1, my_state.get("test_key"))
+
+    # Remove the first one too.
+    my_state.remove("test_key")
+    self.assertRaises(KeyError, my_state.get, "test_key")
+
   def test_callbacks(self):
     """ Tests that state callbacks work. """
     def test_callback(state):

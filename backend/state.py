@@ -8,9 +8,9 @@ logger = logging.getLogger(__name__)
 
 class State:
   """ A container for global application state that is not written to the
-  database. This is mostly just a wrapper around a Python dictionary, with
-  methods that can be easily passed as callbacks. It also automatically sends a
-  broadcast message on the websocket when the state changes. """
+  database. The state is defined as a nested tree structure, with methods that
+  can be easily passed as callbacks. It also automatically sends a broadcast
+  message on the websocket when the state changes. """
 
   def __init__(self):
     # This dictionary actually stores the state.
@@ -24,6 +24,27 @@ class State:
     # Add the state callback.
     websocket.GrobotWebSocket.add_message_handler("state",
                                                   self.__state_callback)
+
+  def __get_item(self, keys, create=False):
+    """ Gets an item indexed by a list of keys.
+    Args:
+      keys: The keys that index the item, from the top down.
+      create: Whether to create any missing levels. If false, it will throw a
+              key error instead.
+    Returns: The item it found. """
+    level = self.__state
+    for key in keys:
+      if key not in level:
+        if create:
+          # Create the missing item.
+          level[key] = {}
+
+        else:
+          raise KeyError("Could not find key '%s' in state." % (key))
+
+      level = level[key]
+
+    return level
 
   def __send_message(self, state):
     """ Sends a broadcast message when the state changes.
@@ -46,26 +67,53 @@ class State:
       # Copy the state so they can't mutate it.
       callback(self.__state.copy())
 
-  def set(self, key, value):
+  def set(self, *args):
     """ Sets a particular item in the state.
     Args:
-      key: The name of the item to set.
-      value: The value of the item to set. """
-    changed = True
-    if (key in self.__state and value == self.__state[key]):
-      changed = False
+      The first arguments will be interpreted as the keys to the attribute that
+      will be set. The last argument is interpreted as the value. """
+    if len(args) < 2:
+      raise AttributeError("Require at least one key and one value.")
 
-    logger.debug("Setting state '%s' to '%s'." % (key, value))
-    self.__state[key] = value
+    first_keys = args[:-2]
+    last_key = args[-2]
+    value = args[-1]
 
-    if changed:
+    level = self.__state
+    if first_keys:
+      # Find the appropriate level in the state tree. We want to get down to the
+      # second-to-last one so we can modify the leaf node. (If we're modifying
+      # something at the top leve, we don't need to worry about this.)
+      level = self.__get_item(first_keys, create=True)
+
+    logger.debug("Setting state '%s' to '%s'." % (args[:-1], value))
+
+    if (last_key not in level or level[last_key] != value):
+      level[last_key] = value
       self.__run_callbacks()
 
-  def get(self, key):
+  def get(self, *args):
     """ Returns the state item referenced by a particular key.
     Args:
-      key: The key to get the state for. """
-    return self.__state[key]
+      The arguments will be interpreted as keys to the value that needs to be
+      read. """
+    return self.__get_item(args)
+
+  def remove(self, *args):
+    """ Removes an item from the state.
+    Args:
+      The arguments will be interpreted as keys to the value that needs to be
+      removed. """
+    logger.debug("Removing entry for %s from global state." % (str(args)))
+
+    # Find up to the last level.
+    first_keys = args[:-1]
+    last_key = args[-1]
+
+    last_level = self.__get_item(first_keys)
+
+    # Remove it.
+    last_level.pop(last_key)
 
   def reset(self):
     """ Resets the entire state, and removes non-default callbacks. Note that
