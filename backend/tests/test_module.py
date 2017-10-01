@@ -2,6 +2,7 @@ import logging
 import random
 
 from .. import module
+from .. import state
 from ..serial_talker import Message
 
 from . import base_test
@@ -18,6 +19,9 @@ class ModuleTest(base_test.BaseTest):
 
   def setUp(self):
     super().setUp()
+
+    # Clear the global state, since the module system writes stuff in here.
+    state.get_state().reset()
 
     # Make a module for testing.
     self.__module = module.Module(self._db.modules, -1, -1)
@@ -43,6 +47,19 @@ class ModuleTest(base_test.BaseTest):
     self.assertEqual(expected, self.__module.gen_permanent_id())
     self.assertEqual(expected, self.__module.get_permanent_id())
 
+  def test_permanent_id_state_update(self):
+    """ Tests that the global state gets updated when we set the permanent ID.
+    """
+    my_state = state.get_state()
+
+    # Check that it created an entry for the initial permanent ID.
+    self.assertEqual({}, my_state.get("modules", -1))
+
+    # Changing the permanent ID should remove the first entry and add a new one.
+    self.__module.set_permanent_id(1337)
+    self.assertRaises(KeyError, my_state.get, "modules", -1)
+    self.assertEqual({}, my_state.get("modules", 1337))
+
   def test_database_config(self):
     """ Tests that we can configure the module from the database once we have
     the permanent ID. """
@@ -60,6 +77,7 @@ class ModuleTest(base_test.BaseTest):
     documents = self._db.modules.get_documents()
     self.assertEqual(1, len(documents))
     self.assertEqual(42, documents[0]["permanent_id"])
+
 
 class ModuleInterfaceTest(test_module_sim.SimulatorTestBase):
   """ Tests for the ModuleInterface class. """
