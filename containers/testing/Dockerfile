@@ -28,7 +28,7 @@ ADD bower.json .
 RUN bower install --allow-root
 
 # Install python dependencies.
-RUN pip3 install pyserial tornado motor
+RUN pip3 install pyserial tornado motor pyyaml
 
 # Configure bower_components symlink.
 RUN mkdir /grobot && ln -s /bower_components /grobot/bower_components

@@ -1,0 +1,11 @@
+# Lighting intensity, channel-wise. Range from 0-255.
+lighting:
+  red: 255
+  white: 255
+  blue: 255
+
+timing:
+  # Total days to grow for.
+  grow_days: 30
+  # Total number of hours to have the lights on each day.
+  daylight_hours: 16
