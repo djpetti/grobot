@@ -46,26 +46,41 @@ class State:
 
     return level
 
-  def __send_message(self, state):
+  def __send_message(self, key):
     """ Sends a broadcast message when the state changes.
     Args:
-      state: The new state. """
-    message = {"type": "state", "state": state}
+      key: The key (or list of keys) that changed. """
+    message = {"type": "state_change", "key": key}
     websocket.GrobotWebSocket.broadcast_message(message)
 
   def __state_callback(self, message, client):
-    """ Callback that sends back the state when a client sends a state message.
+    """ Sends back the state when a client sends a state message.
+    This can be used by another module to handle the state request. It can send
+    back the whole state, or just part of it if the "key" parameter is present
+    in the message.
     Args:
       message: The message received.
       client: The client that sent the message. """
     logger.debug("Sending state to %s, which requested it." % (client))
-    client.write_message({"type": "state", "state": self.__state})
 
-  def __run_callbacks(self):
-    """ Run registered callbacks when the state changes. """
+    # Figure out what key was requested.
+    state_portion = self.__state
+    key = message.get("key", [])
+    if key:
+      logger.debug("Requested data for key: %s" % (key))
+      state_portion = self.__get_item(key)
+    else:
+      logger.debug("Sending entire state.")
+
+    client.write_message({"type": "state", "key": key, "state": state_portion})
+
+  def __run_callbacks(self, key):
+    """ Run registered callbacks when the state changes.
+    Args:
+      key: The key (or list of keys) that changed in the state. """
     for callback in self.__callbacks:
       # Copy the state so they can't mutate it.
-      callback(self.__state.copy())
+      callback(list(key))
 
   def set(self, *args):
     """ Sets a particular item in the state.
@@ -75,9 +90,11 @@ class State:
     if len(args) < 2:
       raise AttributeError("Require at least one key and one value.")
 
-    first_keys = args[:-2]
-    last_key = args[-2]
     value = args[-1]
+
+    keys = args[:-1]
+    first_keys = keys[:-1]
+    last_key = keys[-1]
 
     level = self.__state
     if first_keys:
@@ -88,9 +105,10 @@ class State:
 
     logger.debug("Setting state '%s' to '%s'." % (args[:-1], value))
 
+    # Run any state change callbacks.
     if (last_key not in level or level[last_key] != value):
       level[last_key] = value
-      self.__run_callbacks()
+      self.__run_callbacks(keys)
 
   def get(self, *args):
     """ Returns the state item referenced by a particular key.
@@ -115,6 +133,11 @@ class State:
     # Remove it.
     last_level.pop(last_key)
 
+    # Run any state change callbacks. Technically, the key that got changed here
+    # was one level above the one we deleted, because the one we deleted
+    # obviously doesn't exist anymore.
+    self.__run_callbacks(first_keys)
+
   def reset(self):
     """ Resets the entire state, and removes non-default callbacks. Note that
     this does trigger a state change message to be send on the websocket,
@@ -128,7 +151,7 @@ class State:
     self.add_callback(self.__send_message)
 
     if not previously_empty:
-      self.__run_callbacks()
+      self.__run_callbacks([])
 
   def add_callback(self, callback):
     """ Add a callback, which will be run every time the state changes. It will

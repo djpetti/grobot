@@ -73,13 +73,13 @@ class StateTest(base_test.BaseTest):
     my_state.remove("test_key")
     self.assertRaises(KeyError, my_state.get, "test_key")
 
-  def test_callbacks(self):
-    """ Tests that state callbacks work. """
-    def test_callback(state):
+  def test_callbacks_on_set(self):
+    """ Tests that state callbacks work when we set an item. """
+    def test_callback(key):
       """ Simple callback for state testing.
       Args:
-        state: The new state dictionary. """
-      self.assertEqual(1, state["test_key"])
+        key: The key that was changed. """
+      self.assertEqual(key, ["test_key"])
       self.stop()
 
     my_state = state.get_state()
@@ -87,6 +87,76 @@ class StateTest(base_test.BaseTest):
     # Add the callback.
     my_state.add_callback(test_callback)
     # It should get run when we change the state.
+    my_state.set("test_key", 1)
+
+  def test_callbacks_on_remove(self):
+    """ Tests that state callbacks work when we remove an item. """
+    def test_callback(key):
+      """ Simple callback for state testing.
+      Args:
+        key: The key that was changed. """
+      # This should be empty, since we deleted a top-level key.
+      self.assertEqual(key, [])
+      self.stop()
+
+    my_state = state.get_state()
+    # Set an attrbiute.
+    my_state.set("test_key", 1)
+
+    # Add the callback.
+    my_state.add_callback(test_callback)
+    # Remove the attribute, which should fire the callback.
+    my_state.remove("test_key")
+
+  def test_callbacks_on_reset(self):
+    """ Tests that state callbacks work when we reset the state. """
+    def test_callback(key):
+      """ Simple callback for state testing.
+      Args:
+        key: The key that was changed. """
+      # This should be empty, since a reset always changes the top-level.
+      self.assertEqual(key, [])
+      self.stop()
+
+    my_state = state.get_state()
+    # Set an attribute.
+    my_state.set("test_key", 1)
+
+    # Add the callback.
+    my_state.add_callback(test_callback)
+    # Reset the state, which should fire the callback.
+    my_state.reset()
+
+  def test_stuttering_reset(self):
+    """ Tests that a reset that does nothing doesn't fire a callback. """
+    def test_callback(*args):
+      """ Simple callback for state testing. """
+      # This should never get run.
+      self.fail("Callback should not have been run.")
+      self.stop()
+
+    my_state = state.get_state()
+    # Add the callback.
+    my_state.add_callback(test_callback)
+
+    # Resetting an empty state does nothing.
+    my_state.reset()
+
+  def test_stuttering_set(self):
+    """ Tests that a set that does nothing doesn't fire a callback. """
+    def test_callback(*args):
+      """ Simple callback for state testing. """
+      # This should never get run.
+      self.fail("Callback should not have been run.")
+      self.stop()
+
+    my_state = state.get_state()
+    # Set an attribute.
+    my_state.set("test_key", 1)
+    # Add the callback.
+    my_state.add_callback(test_callback)
+
+    # Set the same thing again.
     my_state.set("test_key", 1)
 
 class StateTestWithWebsocket(base_test.BaseWebSocketTest):
@@ -105,7 +175,7 @@ class StateTestWithWebsocket(base_test.BaseWebSocketTest):
       Args:
         message: The message that was received. """
       message = json.loads(message)
-      self.assertEqual({"type": "state", "state": {"mcu_alive": False}},
+      self.assertEqual({"type": "state_change", "key": ["mcu_alive"]},
                        message)
       self.stop()
 
@@ -125,7 +195,12 @@ class StateTestWithWebsocket(base_test.BaseWebSocketTest):
         message: The message that was received. """
       message = json.loads(message)
       self.assertEqual(message["type"], "state")
+
       self.assertIn("state", message)
+      self.assertEqual({}, message["state"])
+
+      self.assertIn("key", message)
+      self.assertEqual([], message["key"])
 
       self.stop()
 
@@ -137,5 +212,37 @@ class StateTestWithWebsocket(base_test.BaseWebSocketTest):
 
       socket = future.result()
       socket.write_message(json.dumps(message))
+
+    self._connect_and_run(on_connect, receive_message)
+
+  def test_state_partial_send(self):
+    """ Tests that we can request a partial state update. """
+    def receive_message(message):
+      """ Used as a callback to receive messages from the websocket.
+      Args:
+        message: The message that was received. """
+      message = json.loads(message)
+      self.assertEqual(message["type"], "state")
+
+      self.assertIn("state", message)
+      self.assertEqual(1, message["state"])
+
+      self.assertIn("key", message)
+      self.assertEqual(["test_group", "test_key_1"], message["key"])
+
+      self.stop()
+
+    def on_connect(future):
+      """ Sends a state message after the socket is connected.
+      Args:
+        future: The connection future. """
+      message = {"type": "state", "key": ["test_group", "test_key_1"]}
+
+      socket = future.result()
+      socket.write_message(json.dumps(message))
+
+    # Set up the state. We do this here before anything connects so it doesn't
+    # trigger any callbacks.
+    state.get_state().set("test_group", "test_key_1", 1)
 
     self._connect_and_run(on_connect, receive_message)

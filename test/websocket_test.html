@@ -30,6 +30,27 @@
           fakeRedux.store.initFakeState();
 
           socketHandler = new websockets.Backend(true);
+
+          // Replace the socket with a mock that we can use for testing.
+          let fakeSocket = class {
+            constructor() {
+              // Stores send messages.
+              this.messages_ = [];
+            }
+
+            send(message) {
+              // Record the message.
+              this.messages_.push(message);
+            }
+
+            getMessages() {
+              // Get the current messages.
+              return this.messages_;
+            }
+          };
+
+          // Replace the real socket with a fake one.
+          socketHandler.socket = new fakeSocket();
         });
 
         test('it ignores a message with an invalid type.',
@@ -53,22 +74,24 @@
         test('Redux reflects a state update request.',
              function(done) {
           // Send a message with an updated state.
-          let message = {type: 'state', state: {mcu_alive: true}};
+          let message = {type: 'state', key: ['mcu_alive'], state: true};
           socketHandler.processMessage_(message);
 
           // We should see an action marking it as alive.
           let actions = main.getReduxStore().getDispatchedActions();
           assert.equal(1, actions.length);
-          assert.isTrue(actions[0].state.mcu_alive);
+          assert.deepEqual(['mcu_alive'], actions[0].key);
+          assert.isTrue(actions[0].state);
 
           // Mark it as dead now.
-          message.state.mcu_alive = false;
+          message.state = false;
           socketHandler.processMessage_(message);
 
           // We should see an action marking it as dead.
           actions = main.getReduxStore().getDispatchedActions();
           assert.equal(2, actions.length);
-          assert.isFalse(actions[1].state.mcu_alive);
+          assert.deepEqual(['mcu_alive'], actions[1].key);
+          assert.isFalse(actions[1].state);
 
           done();
         });
@@ -78,10 +101,10 @@
           // Manually update the state, so that it indicates that the MCU is
           // dead.
           let fakeState = main.getReduxStore().getState();
-          fakeState.fromBackend.mcuAlive = false;
+          fakeState.fromBackend.mcu_alive = false;
 
           // Now send a message to force it to update with the fake state.
-          const message = {type: 'state', state: {mcu_alive: false}};
+          const message = {type: 'state', key: ['mcu_alive'], state: false};
           socketHandler.processMessage_(message);
 
           // We should see two actions at this point. One is the initial state
@@ -94,6 +117,24 @@
                        actions[1].description);
           assert.equal(notRespondingMessage.level, actions[1].level);
           assert.equal(notRespondingMessage.id, actions[1].id);
+
+          done();
+        });
+
+        test('Websockets handles a state_change message correctly.',
+             function(done) {
+          // Fake a state change message.
+          const message = {type: 'state_change', key: ['mcu_alive']};
+          socketHandler.processMessage_(message);
+
+          // We should see no actions.
+          const actions = main.getReduxStore().getDispatchedActions();
+          assert.equal(0, actions.length);
+
+          // A response message should have been written.
+          const responseMessage = socketHandler.socket.getMessages()[0];
+          const expected = {type: 'state', key: ['mcu_alive']};
+          assert.deepEqual(JSON.stringify(expected), responseMessage);
 
           done();
         });
