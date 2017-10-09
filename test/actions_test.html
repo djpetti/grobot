@@ -111,28 +111,61 @@
              function(done) {
 					// Create an initial state to start with.
 					const state = actions.initialState;
-					assert.isTrue(state.fromBackend.mcuAlive);
+					assert.isTrue(state.fromBackend.mcu_alive);
 
 					// Now, create an action that should not change the state.
-					const aliveBackendState = {mcu_alive: true};
-					const aliveAction = actions.updateBackendState(aliveBackendState);
+					const aliveAction = actions.updateBackendState(['mcu_alive'], true);
 
 					// The state should remain the same.
 					let newState = actions.grobotAppReducer(state, aliveAction);
 					assert.deepEqual(state, newState);
 
 					// Now, create an action that changes the state.
-					const deadBackendState = {mcu_alive: false};
-					const deadAction = actions.updateBackendState(deadBackendState);
+					const deadAction = actions.updateBackendState(['mcu_alive'], false);
 
 					// The state should change.
 					newState = actions.grobotAppReducer(state, deadAction);
 					assert.notDeepEqual(state, newState);
-					assert.isFalse(newState.fromBackend.mcuAlive);
+					assert.isFalse(newState.fromBackend.mcu_alive);
 
 					// Change it back.
 					newState = actions.grobotAppReducer(newState, aliveAction);
 					assert.deepEqual(state, newState);
+
+          done();
+        });
+
+        test('the UPDATE_BACKEND_STATE action can update the full state',
+             function(done) {
+          // Create an initial state to start with.
+          const state = actions.initialState;
+          assert.isTrue(state.fromBackend.mcu_alive);
+
+          // Create an action that completely replaces the state.
+          const newParamAction =
+              actions.updateBackendState([], {'new_param': 1});
+
+          // The state should be updated accordingly.
+          const newState = actions.grobotAppReducer(state, newParamAction);
+          assert.deepEqual({'new_param': 1}, newState.fromBackend);
+
+          done();
+        });
+
+        test('the UPDATE_BACKEND_STATE action can add a new parameter',
+             function(done) {
+          // Create an initial state to start with.
+          const state = actions.initialState;
+          assert.isTrue(state.fromBackend.mcu_alive);
+
+          // Create an action that adds a new parameter.
+          const newParamAction = actions.updateBackendState(['new_group',
+                                                             'new_param'], 1);
+
+          // The state should be updated accordingly.
+          const newState = actions.grobotAppReducer(state, newParamAction);
+          assert.equal(1, newState.fromBackend.new_group.new_param);
+          assert.isTrue(state.fromBackend.mcu_alive);
 
           done();
         });

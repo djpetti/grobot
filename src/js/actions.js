@@ -18,11 +18,13 @@ actions.UPDATE_PANEL_ITEM_LIST = 'UPDATE_PANEL_ITEM_LIST';
 actions.SET_ACTION_PANEL = 'SET_ACTION_PANEL';
 
 /** Action creator that creates an UPDATE_BACKEND_STATE.
+ * @param key The key for the part of the state we are updating. If it is an
+ *            empty list, the top level of the state will be updated.
  * @param state The new backend state that you want to update.
  * @returns The created action.
  */
-actions.updateBackendState = function(state) {
-  return {type: actions.UPDATE_BACKEND_STATE, state};
+actions.updateBackendState = function(key, state) {
+  return {type: actions.UPDATE_BACKEND_STATE, key, state};
 }
 
 /** Action creator that creates an ADD_PANEL_ITEM.
@@ -66,7 +68,7 @@ actions.initialState = {
   // State from the backend that's synchronized to us.
   fromBackend: {
     // Whether the MCU is currently active.
-    mcuAlive: true,
+    mcu_alive: true,
   },
 
   // Action panel data.
@@ -86,7 +88,7 @@ actions.initialState = {
   },
 };
 
-/** Reducer for the error modal status.
+/** Reducer for backend state-related actions.
  * @private
  * @param state The current state.
  * @param action The action we want to modify the state with.
@@ -95,8 +97,37 @@ actions.initialState = {
 actions.fromBackendReducer_ = function(state = {}, action) {
   switch (action.type) {
     case actions.UPDATE_BACKEND_STATE:
-      const mcuAlive = action.state.mcu_alive;
-      return Object.assign({}, state, {mcuAlive: mcuAlive});
+      // Make copy of the state.
+      let newState = Object.assign({}, state);
+      // Make a copy of the action key too since we also change that.
+      const myKey = action.key.slice();
+
+      const last_key = myKey.pop();
+      let level = newState;
+      console.log(myKey);
+      for (i = 0; i < myKey.length; ++i) {
+        let key = myKey[i];
+
+        if (!(key in level)) {
+          // Add a new level to the state.
+          level[key] = {};
+        }
+        console.log(JSON.stringify(level));
+        level = level[key];
+      }
+
+      // Set the state.
+      if (!last_key) {
+        // For some reason, JavaScript thinks that it's logical for popping from
+        // an empty list to produce 'undefined'. In this case, if the key list
+        // is empty, it means that we want to update the top-level state.
+        newState = action.state;
+      } else {
+        level[last_key] = action.state;
+      }
+
+      console.log('Updated backend state: ' + JSON.stringify(newState));
+      return newState;
 
     default:
       return state;
