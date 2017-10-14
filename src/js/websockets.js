@@ -33,10 +33,12 @@ websockets.Backend = class {
 
   /** Sends a request to the server for the initial state, and updates the Redux
    * state accordingly.
-   @private */
-  updateBackendState_() {
+   @private
+   @param key The key that we request from the state. If not specified, the
+              entire state will be requested. */
+  updateBackendState_(key = []) {
     // Send a state request message to the backend.
-    var message = {type: 'state'};
+    var message = {type: 'state', key};
     this.socket.send(JSON.stringify(message));
   }
 
@@ -54,10 +56,16 @@ websockets.Backend = class {
   processMessage_(message) {
     switch (message.type) {
       case 'state':
-        // There was a state change on the server. Reflect it accordingly in
+        // Response to a state request. Reflect it accordingly in
         // Redux.
         let store = main.getReduxStore();
-        store.dispatch(actions.updateBackendState(message.state));
+        store.dispatch(actions.updateBackendState(message.key, message.state));
+        break;
+
+      case 'state_change':
+        // The state changed. Request the appropriate portion of the state so
+        // that we can update accordingly.
+        this.updateBackendState_(message.key);
         break;
 
       default:
@@ -78,7 +86,7 @@ websockets.Backend = class {
     const backendState = store.getState().fromBackend;
 
     // Update the action panel.
-    if (!backendState.mcuAlive) {
+    if (!backendState.mcu_alive) {
       // If the MCU is dead, we want to show a message on the action panel about
       // it.
       const message = gbActionPanelMessages.mcuNotResponding;
