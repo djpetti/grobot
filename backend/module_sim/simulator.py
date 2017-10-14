@@ -55,7 +55,7 @@ class Simulator:
     while True:
       # Get the next message from the serial layer.
       self.__get_new_data()
-      if self.__parser.has_message():
+      while self.__parser.has_message():
         message = self.__parser.get_message()
         logger.debug("Got message: %s" % (message.get_raw()))
 
