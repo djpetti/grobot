@@ -20,6 +20,7 @@ int g_countvalues_datatimer[44] = {0};
 int g_executed;
 int g_count;
 int g_risingedge_counts;
+int g_has_been_executed;
 
 _CY_ISR_PROTO(Delay_Timer_ISR_Handler);
 _CY_ISR_PROTO(DHT_Pin_ISR_Handler);
@@ -186,6 +187,8 @@ void dht_init(){
     // Initilize g_count to 0 and g_executed to 1
     g_count = 0;
     g_executed = 1;
+    
+    g_has_been_executed = 0;
 }   
 
 
@@ -206,44 +209,65 @@ void dht_start(){
     // This is going to run until decode dht data is called
     // After this is done, the loop will end, and the data will
     // be in the respective variables
-    for(;;){
+    
+    /*
+    switch(g_has_been_executed){
+        //This case is when the code has not been run before, and it needs to
+        //collect the temp and humidity data
+        case 0:
+            g_has_been_executed = 1;
         
-        if(g_executed == 1 && g_count == 0) {
-            g_executed = 0;
-            g_risingedge_counts = 0;
-            CyDelayUs(50);
-            DHT_Pin_Write(0);
-            Delay_Timer_WritePeriod(DELAY_ACQUISITION);
-            // Call the delay function to set the DHT_Pin as low for 20ms 
-            delay_funct();
-        }    
-        
-        if(g_count >= 2 && g_executed ==0) {
-            Control_Reg_Data_Timer_Write(0);
-            // Write 1 to DHT_Pin 
-            DHT_Pin_Write(1);
-            // Enable DHT_Pin_ISR to get data from the DHT11 sensor
-            DHT_Pin_ISR_Enable();
-            // To keep the DHT_Pin as High for 30us, the below function is called 
-            CyDelayUs(30);
-            Delay_Timer_WritePeriod(DELAY_PROCESSING);
-            Control_Reg_Delay_Timer_Write(0);
-            // Change the Executed and Count status to decode the DHT11 values
-            g_executed = 2;
-            g_count = 0;
-        }
-        
-        if(g_decode_flag == 1) {
-            Control_Reg_Data_Timer_Write(1);
-            DHT_Pin_ISR_Disable(); 
-            DHT_Pin_Write(1);   
-            g_decode_flag = 0;
-            decode_dht_data();
-            g_executed = 1;
-            g_count = 0;
-        }    
-        
-    }   
+        case 1:
+            g_has_been_executed = 0;
+    }
+    */
+    
+    switch (g_has_been_executed) {
+        case 0:
+            for(;;){
+                
+                if(g_executed == 1 && g_count == 0) {
+                    g_executed = 0;
+                    g_risingedge_counts = 0;
+                    CyDelayUs(50);
+                    DHT_Pin_Write(0);
+                    Delay_Timer_WritePeriod(DELAY_ACQUISITION);
+                    // Call the delay function to set the DHT_Pin as low for 20ms 
+                    delay_funct();
+                }    
+                
+                if(g_count >= 2 && g_executed ==0) {
+                    Control_Reg_Data_Timer_Write(0);
+                    // Write 1 to DHT_Pin 
+                    DHT_Pin_Write(1);
+                    // Enable DHT_Pin_ISR to get data from the DHT11 sensor
+                    DHT_Pin_ISR_Enable();
+                    // To keep the DHT_Pin as High for 30us, the below function is called 
+                    CyDelayUs(30);
+                    Delay_Timer_WritePeriod(DELAY_PROCESSING);
+                    Control_Reg_Delay_Timer_Write(0);
+                    // Change the Executed and Count status to decode the DHT11 values
+                    g_executed = 2;
+                    g_count = 0;
+                }
+                
+                if(g_decode_flag == 1) {
+                    Control_Reg_Data_Timer_Write(1);
+                    DHT_Pin_ISR_Disable(); 
+                    DHT_Pin_Write(1);   
+                    g_decode_flag = 0;
+                    decode_dht_data();
+                    g_executed = 1;
+                    g_count = 0;
+                }    
+            
+            }   
+            g_has_been_executed = 1;
+            break; 
+            
+        case 1:
+            break;
+    }    
     
     // When exited we will have the data in the two "decoded" variables
 }    
