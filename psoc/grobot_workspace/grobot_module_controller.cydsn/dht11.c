@@ -210,18 +210,6 @@ void dht_start(){
     // After this is done, the loop will end, and the data will
     // be in the respective variables
     
-    /*
-    switch(g_has_been_executed){
-        //This case is when the code has not been run before, and it needs to
-        //collect the temp and humidity data
-        case 0:
-            g_has_been_executed = 1;
-        
-        case 1:
-            g_has_been_executed = 0;
-    }
-    */
-    
     switch (g_has_been_executed) {
         case 0:
             for(;;){
