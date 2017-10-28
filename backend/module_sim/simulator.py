@@ -19,6 +19,7 @@ class Simulator:
 
     # Keeps track of the modules in this simulation.
     self.__modules = set()
+    self.__sim_process = None
 
   def __del__(self):
     self.force_exit()
@@ -113,6 +114,10 @@ class Simulator:
 
   def force_exit(self):
     """ Forces the simulator to exit now. """
+    if not self.__sim_process:
+      # Wasn't ever started.
+      return
+
     if self.__sim_process.is_alive():
       logger.info("Terminating simulator process.")
       self.__sim_process.terminate()

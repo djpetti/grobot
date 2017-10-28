@@ -75,6 +75,14 @@ class PresetManagerTest(base_test.BaseTest):
     # Check that the right ones got loaded.
     self.assertEqual(1, manager.get_num_presets())
 
+  def test_load_bad_path(self):
+    """ Tests that it handles an invalid preset directory correctly. """
+    bad_path = "not_a_path"
+    manager = plant_presets.PresetManager(bad_path)
+
+    # Check that nothing gets loaded.
+    self.assertEqual(0, manager.get_num_presets())
+
   def test_get_preset(self):
     """ Tests that we can get a preset by name. """
     test_path = os.path.dirname(__file__)

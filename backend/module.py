@@ -42,7 +42,19 @@ class _ModuleDatabaseHelper:
     """
     Returns:
       A representation of the module that can be stored in the database. """
-    module_doc = {"permanent_id": self._permanent_id}
+    module_doc = {"permanent_id": self._permanent_id,
+                  "name": self._plant_name,
+                  "icon_url": self._plant_icon_url,
+                  "lighting": { \
+                    "red": self._lighting_red,
+                    "white": self._lighting_white,
+                    "blue": self._lighting_blue \
+                  },
+                  "timing": { \
+                    "grow_days": self._grow_days,
+                    "grow_days_elapsed": self._grow_days_elapsed,
+                    "daylight_hours": self._daylight_hours \
+                  }}
     return module_doc
 
   def __set_module_from_document(self, module_doc):
@@ -50,12 +62,28 @@ class _ModuleDatabaseHelper:
     Args:
       module_doc: The module document. """
     logger.debug("Setting module params from: %s" % (module_doc))
-    # We don't have anything to set yet, so this doesn't do anything.
 
-  def _add_or_update_module_in_db(self):
+    # Set the parameters.
+    self._plant_name = module_doc["name"]
+    self._plant_icon_url = module_doc["icon_url"]
+
+    lighting = module_doc["lighting"]
+    self._lighting_red = lighting["red"]
+    self._lighting_white = lighting["white"]
+    self._lighting_blue = lighting["blue"]
+
+    timing = module_doc["timing"]
+    self._grow_days = timing["grow_days"]
+    self._grow_days_elapsed = timing["grow_days_elapsed"]
+    self._daylight_hours = timing["daylight_hours"]
+
+  def _add_or_update_module_in_db(self, callback=None):
     """ Will either update the existing entry for this module in the database,
     or add a new one if it does not exist yet. This executes database operations
-    in a fire-and-forget sort of fashion. (Errors will be logged.) """
+    in a fire-and-forget sort of fashion. (Errors will be logged.)
+    Args:
+      callback: If provided, will run upon completion of the operation. It will
+                be passed the new document from the database as an argument. """
     @tornado.gen.coroutine
     def do_update():
       """ Performs the actual update. See the documentation of the enclosing
@@ -74,16 +102,23 @@ class _ModuleDatabaseHelper:
         # A failed update.
         error = "Failed to update document for module %d." % \
                 (self._permanent_id)
-        logger.Error(error)
+        logger.error(error)
         raise DbError(error)
+
+      # Run the callback.
+      if callback:
+        callback(new_doc)
 
     # Perform this asynchronously using the ioloop.
     IOLoop.current().spawn_callback(do_update)
 
-  def _configure_from_db(self):
+  def _configure_from_db(self, callback=None):
     """ Reads the module configuration out of the database, and updates the
     module accordingly. If it can't find the module, it will make no changes.
-    This executes in a fire-and-forget fashion. (Errors will be logged.) """
+    This executes in a fire-and-forget fashion. (Errors will be logged.)
+    Args:
+      callback: If provided, will run upon completion of the operation. It will
+                passed the document read from the database as an argument. """
     @tornado.gen.coroutine
     def do_configure():
       """ Performs the actual configuration. See documentation of the enclosing
@@ -92,16 +127,20 @@ class _ModuleDatabaseHelper:
       existing_doc = yield self.__find_module()
 
       if not existing_doc:
-        # Technically, it's possible to get here, because Mongo aknowledges the
+        # Technically, it's possible to get here, because Mongo acknowledges the
         # write before it's written to disk. However, this will only really
         # happen when we just created the document, in which case, we don't have
         # any data for this module anyway.
         logger.debug("No Mongo document for module. Asuming new.")
-        return
 
-      logger.debug("Will set module %d config from database." % \
-                   (self._permanent_id))
-      self.__set_module_from_document(existing_doc)
+      else:
+        logger.debug("Will set module %d config from database." % \
+                    (self._permanent_id))
+        self.__set_module_from_document(existing_doc)
+
+      # Run the callback.
+      if callback:
+        callback(existing_doc)
 
     # Perform this asynchronously using the ioloop.
     IOLoop.current().spawn_callback(do_configure)
@@ -118,6 +157,27 @@ class Module(_ModuleDatabaseHelper):
       permanent_id: The module's permanent ID, which is stored in flash, and
                     generally set only once during the module's lifetime. """
     super().__init__(module_col)
+
+    # Current preset that is being used for this module.
+    self._preset = None
+
+    # The current name of whatever's growing in this module.
+    self._plant_name = None
+    # The current icon URL of the plant.
+    self._plant_icon_url = None
+
+    # The brightness of the lights in this module, from 0-255.
+    self._lighting_red = 0
+    self._lighting_white = 0
+    self._lighting_blue = 0
+
+    # Total days that this plant needs to grow for.
+    self._grow_days = 0
+    # How many of those days have elapsed.
+    self._grow_days_elapsed = 0
+
+    # How many hours of daylight this plant needs.
+    self._daylight_hours = 0
 
     # Initialize these to something bogus so the logging works.
     self.__id = -1
@@ -203,15 +263,36 @@ class Module(_ModuleDatabaseHelper):
       The currently set permanent ID. """
     return self._permanent_id
 
+  def configure_from_preset(self, preset):
+    """ Configure this module from a preset.
+    Args:
+      preset: The preset to configure from. """
+    logger.info("Configuring module %d from preset: '%s'" % \
+                (self._permanent_id, str(preset)))
+    self._preset = preset
+
+    # Set all the attributes based on the preset values.
+    self._plant_name, self._plant_icon_url = self._preset.get_name_and_icon()
+    self._lighting_red, self._lighting_white, self._lighting_blue = \
+        self._preset.get_lighting()
+    self._grow_days = self._preset.get_grow_days()
+    self._daylight_hours = self._preset.get_daylight_hours()
+
+    # Save to the database.
+    self._add_or_update_module_in_db()
+    # Update the state.
+    self.__update_state_from_module()
 
 class ModuleInterface:
   """ Handles global tasks pertaining to the entire set of modules. """
 
-  def __init__(self, serial, db):
+  def __init__(self, serial, db, plant_presets):
     """
     Args:
       serial: This is the SerialTalker to use for communicating with modules.
       db: The database we are using.
+      plant_presets: PresetManager instance containing the current loaded plant
+                     presets.
     """
     logger.info("Initializing module interface...")
 
@@ -221,6 +302,8 @@ class ModuleInterface:
     self.__serial = serial
     # Database to store module settings.
     self.__module_collection = db.modules
+    # Plant preset manager.
+    self.__presets = plant_presets
 
     # Initialize the serial handler.
     self.__serial.add_message_handler(self.__common_handler)
@@ -235,8 +318,20 @@ class ModuleInterface:
       if module.get_id() == module_id:
         return module
 
-    # This has got to be a programming error.
+    # Could not find the module.
     raise KeyError("No module with ID %d." % (module_id))
+
+  def __get_module_by_permanent_id(self, permanent_id):
+    """ Gets a particular module by its permanent ID.
+    Args:
+      permanent_id: The permanent ID we are looking for.
+    Returns:
+      The module with that permanent ID. """
+    for module in self.__modules:
+      if module.get_permanent_id() == permanent_id:
+        return module
+
+    raise KeyError("No module with permanent ID %d." % (permanent_id))
 
   def __common_handler(self, message):
     """ Handles all relevant messages coming from the modules.
@@ -288,6 +383,15 @@ class ModuleInterface:
 
     # Set it on the MCU.
     self.__serial.write_command(Message.SetPermanentId, module_id, permanent_id)
+
+  def set_from_preset(self, permanent_id, preset_name):
+    """ Sets module attributes from a preset.
+    Args:
+      permanent_id: The permanent_id of the module to set attributes for.
+      preset_name: The name of the preset to use. """
+    preset = self.__presets.get_preset(preset_name)
+    module = self.__get_module_by_permanent_id(permanent_id)
+    module.configure_from_preset(preset)
 
   def get_modules(self):
     """

@@ -34,6 +34,10 @@ class PlantPreset:
     logger.debug("Loaded plant preset data: %s" % (raw_data))
     self.__set_from_file_data(raw_data)
 
+  def __str__(self):
+    # Use the name when converting to a string.
+    return "<Preset: %s>" % (self.__plant_name)
+
   def __get_preset(self, data, key, type_conv=None):
     """ Gets a specific preset value.
     Args:
@@ -126,7 +130,9 @@ class PresetManager:
     if not os.path.exists(self.__preset_dir):
       error = "Can't find preset directory: %s" % (self.__preset_dir)
       logger.error(error)
-      raise AttributeError(error)
+
+      # Indicate that we have no presets.
+      return {}
 
     presets = {}
 
@@ -154,7 +160,13 @@ class PresetManager:
       name: The name of the preset.
     Returns:
       The PlantPreset instance for that preset. """
-    return self.__presets[name]
+    try:
+      return self.__presets[name]
+    except KeyError:
+      # Preset not found.
+      error = "Could not find preset '%s'." % (name)
+      logger.error(error)
+      raise KeyError(error)
 
   def get_num_presets(self):
     """
