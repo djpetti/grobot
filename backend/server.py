@@ -13,6 +13,7 @@ import tornado.web
 
 from . import cron
 from . import module
+from . import plant_presets
 from . import serial_talker
 from . import websocket
 
@@ -110,6 +111,17 @@ def make_database(settings):
 
   return db
 
+def load_plant_presets(settings):
+  """ Load module presets.
+  Args:
+    settings: The settings loaded from the settings file.
+  Returns:
+    The PresetManager with the requisite presets loaded. """
+  preset_dir = settings.get("preset_dir", "backend/plant_presets")
+
+  preset_manager = plant_presets.PresetManager(preset_dir)
+  return preset_manager
+
 
 def main(dev_mode=False, override_settings={}):
   """ Runs the main server event loop.
@@ -134,8 +146,11 @@ def main(dev_mode=False, override_settings={}):
 
   # Initialize database.
   db = make_database(settings)
+  # Load plant presets.
+  plant_presets = load_plant_presets(settings)
 
   app = make_app(settings, db, dev_mode=dev_mode)
+
   # Initialize serial subsystem.
   serial = make_serial(settings)
 
@@ -152,7 +167,7 @@ def main(dev_mode=False, override_settings={}):
     # Initialize MCU status checker.
     cron.CheckMcuAliveJob(10000, serial)
     # Initialize module system.
-    module.ModuleInterface(serial)
+    module.ModuleInterface(serial, db, plant_presets)
 
   logger.info("Starting server...")
   tornado.ioloop.IOLoop.current().start()
