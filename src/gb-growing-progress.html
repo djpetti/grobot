@@ -1,0 +1,46 @@
+<link rel="import" href="../bower_components/paper-card/paper-card.html">
+<link rel="import" href="../bower_components/paper-item/paper-item.html">
+<link rel="import" href="../bower_components/paper-item/paper-item-body.html">
+<link rel="import" href="../bower_components/paper-listbox/paper-listbox.html">
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="gb-action-panel-item.html">
+<link rel="import" href="shared-styles.html">
+
+<dom-module id="gb-growing-progress">
+  <template>
+    <style include="shared-styles">
+      .heading-white {
+        --paper-card-header-color: #FFFFFF;
+      }
+    </style>
+
+    <iron-media-query query="(min-width: 1000px)" query-matches="{{wide}}"></iron-media-query>
+
+    <paper-card class="column-card heading-white" heading="Growing Progress"
+                image="../images/plants-growing.svg" alt="Plants Growing"
+                wide-layout$="[[wide]]">
+      <div class="card-content">
+        <div id="empty-message">
+          <!-- Default message shown when card is empty. -->
+          <paper-item>
+            <paper-item-body two-line>
+              <div class="status-item-title">No modules detected.</div>
+              <div class="text-light">Add a module to begin growing.</div>
+            </paper-item-body>
+          </paper-item>
+        </div>
+
+        <paper-listbox>
+          <slot></slot>
+        </paper-listbox>
+
+      </div>
+    </paper-card>
+  </template>
+
+  <script src="js/gb-growing-progress.js"></script>
+  <script>
+    gbGrowingProgress.create();
+  </script>
+
+</dom-module>

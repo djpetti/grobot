@@ -1,8 +1,7 @@
 // Namespace for this file.
 gbActionPanel = {};
 
-/** @private
- * Creates the element. */
+/** Creates the element. */
 gbActionPanel.create = function() {
   console.log('Creating action panel.');
   Polymer({
