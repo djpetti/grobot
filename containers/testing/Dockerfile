@@ -21,7 +21,7 @@ RUN curl -sL https://deb.nodesource.com/setup_7.x | bash -
 RUN apt-get install -y nodejs
 
 # Install node packages.
-RUN /usr/bin/npm install -g bower polymer-cli redux web-component-tester
+RUN /usr/bin/npm install -g bower polymer-cli redux web-component-tester@6.3.0
 
 # Install everything in bower.json.
 ADD bower.json .
