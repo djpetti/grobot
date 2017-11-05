@@ -368,6 +368,95 @@
 
           done();
         });
+
+        test('The saga for a state update handles having no modules.',
+             function(done) {
+          // Fake a backend state update action.
+          const testAction = actions.updateBackendState(['modules'], {});
+
+          // Prime the state to indicate that we have no connected modules.
+          let fakeState = main.getReduxStore().getState();
+          fakeState.fromBackend.modules = {};
+
+          // The saga should add a message about it.
+          let gen = gbActionPanel.sagas.updateBackendStateSaga_(testAction);
+          let next = gen.next();
+
+          // Check that the right action got dispatched.
+          const message = gbActionPanelMessages.noModules;
+          const expectedAction = actions.addPanelItem(message.title,
+                                                      message.description,
+                                                      message.level,
+                                                      message.id);
+          const expectedEffect = ReduxSaga.effects.put(expectedAction);
+          assert.deepEqual(expectedEffect, next.value);
+
+          // Add an item to the action panel.
+          fakeState.actionPanel.items[message.id] = 'foo';
+          main.getReduxStore().setState(fakeState);
+
+          // The saga should not add the same item again.
+          gen = gbActionPanel.sagas.updateBackendStateSaga_(testAction);
+          next = gen.next();
+
+          assert.deepEqual(undefined, next.value);
+
+          done();
+        });
+
+        test('The saga for a state update handles having modules.',
+             function(done) {
+          // Fake a backend state update action.
+          const testAction = actions.updateBackendState(['modules'],
+                                                        {1: 'bar'});
+
+          // Prime the state to indicate that we have a connected module.
+          let fakeState = main.getReduxStore().getState();
+          fakeState.fromBackend.modules = {1: 'bar'};
+
+          // Add a fake action panel item for it to remove.
+          const message = gbActionPanelMessages.noModules;
+          fakeState.actionPanel.items[message.id] = 'foo';
+          main.getReduxStore().setState(fakeState);
+
+          // The saga should remove the item.
+          let gen = gbActionPanel.sagas.updateBackendStateSaga_(testAction);
+          let next = gen.next();
+
+          // Check that the right action got dispatched.
+          const expectedAction = actions.removePanelItem(message.id);
+          const expectedEffect = ReduxSaga.effects.put(expectedAction);
+          assert.deepEqual(expectedEffect, next.value);
+
+          // Remove the item from the action panel.
+          fakeState.actionPanel.items = {};
+
+          // It should not try to remove the item again.
+          gen = gbActionPanel.sagas.updateBackendStateSaga_(testAction);
+          next = gen.next();
+
+          assert.deepEqual(undefined, next.value);
+
+          done();
+        });
+
+        test('The no modules handler handles the MCU being down.',
+             function(done) {
+          // Fake a backend state update action.
+          const testAction = actions.updateBackendState(['modules'], {});
+
+          // Prime the state to indicate that the MCU is down.
+          let fakeState = main.getReduxStore().getState();
+          fakeState.fromBackend.mcu_alive = false;
+
+          // It should do nothing when the MCU is down.
+          let gen = gbActionPanel.sagas.updateBackendStateSaga_(testAction);
+          let next = gen.next();
+
+          assert.deepEqual(undefined, next.value);
+
+          done();
+        });
       });
     </script>
   </body>

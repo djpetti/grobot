@@ -69,6 +69,7 @@ actions.initialState = {
   fromBackend: {
     // Whether the MCU is currently active.
     mcu_alive: true,
+    modules: {},
   },
 
   // Action panel data.

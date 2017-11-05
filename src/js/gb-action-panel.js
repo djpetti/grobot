@@ -27,10 +27,10 @@ gbActionPanel.ready_ = function() {
   saga.run(gbActionPanel.sagas.removeSagaWaiter_);
   saga.run(gbActionPanel.sagas.updateBackendStateSagaWaiter_);
 
-  // Dispatch the proper polymer action.
+  // Register the instance.
   let store = main.getReduxStore();
   store.dispatch(actions.setActionPanel(this));
-}
+};
 
 /** Adds a new item to the action panel.
  * @private
@@ -93,7 +93,7 @@ gbActionPanel.addItem_ = function(title, description, level) {
 gbActionPanel.removeItem_ = function(item) {
   let panel = Polymer.dom(this);
   panel.removeChild(item);
-}
+};
 
 /** Updates the messages at the top of the action panel based on what items are
  * present.
@@ -132,7 +132,7 @@ gbActionPanel.updatePanelTop_ = function(panelState) {
       this.$.statusIcon.src = gbActionPanelItem.ICON_URLS['normal'];
       break;
   }
-}
+};
 
 /** Controls whether a warning about the MCU status is visible on the panel.
  * @private
@@ -157,7 +157,38 @@ gbActionPanel.updateMCUAlive_ = function*(state) {
     // Dispatch the action if we need to.
     yield ReduxSaga.effects.put(action);
   }
-}
+};
+
+/** Controls messages related to module status.
+ * @private
+ * @param state The current Redux state.
+ */
+gbActionPanel.updateModules_ = function*(state) {
+  if (!state.fromBackend.mcu_alive) {
+    // If the MCU is dead, we're not in communication with the modules anyway,
+    // so there's not much we can do here.
+    return;
+  }
+
+  // The message about having no modules.
+  const message = gbActionPanelMessages.noModules;
+
+  let action = null;
+  const noModules = (Object.keys(state.fromBackend.modules).length === 0);
+  if (!noModules && message.id in state.actionPanel.items) {
+    // Remove the message.
+    action = actions.removePanelItem(message.id);
+  } else if (noModules && !(message.id in state.actionPanel.items)) {
+    // Add the message.
+    action = actions.addPanelItem(message.title, message.description,
+                                  message.level, message.id);
+  }
+
+  if (action != null) {
+    // Dispatch the action if we need to.
+    yield ReduxSaga.effects.put(action);
+  }
+};
 
 /** Helper function that determines whether a particular key in the state is a
  *  sub-key of another one.
@@ -181,7 +212,7 @@ gbActionPanel.isSubkey_ = function(key, superKey) {
 
   // Everything appears to match.
   return true;
-}
+};
 
 // Sub-namespace specifically for saga handlers.
 gbActionPanel.sagas = {};
@@ -210,7 +241,7 @@ gbActionPanel.sagas.addSaga_ = function*(action) {
   // All that's left to do is save the actual node. We delegate back to the
   // reducers for this.
   yield ReduxSaga.effects.put(actions.updatePanelItemList(action.id, node));
-}
+};
 
 /** Saga that handles removing an item from the action panel when the
  * REMOVE_PANEL_ITEM action is fired.
@@ -237,7 +268,7 @@ gbActionPanel.sagas.removeSaga_ = function*(action) {
 
   // Remove the node in the state.
   yield ReduxSaga.effects.put(actions.updatePanelItemList(action.id, null));
-}
+};
 
 /** Saga that handles updating the action panel when the backend state changes.
  * @private
@@ -259,7 +290,13 @@ gbActionPanel.sagas.updateBackendStateSaga_ = function*(action) {
     // add or remove a message.
     yield *gbActionPanel.updateMCUAlive_(state);
   }
-}
+
+  if (gbActionPanel.isSubkey_(['modules'], action.key)) {
+    // One of our modules changed in some way. We might have to show a message
+    // about it.
+    yield *gbActionPanel.updateModules_(state);
+  }
+};
 
 /** Listens for ADD_PANEL_ITEM events and dispatches Sagas to handle them.
  * @private
@@ -267,7 +304,7 @@ gbActionPanel.sagas.updateBackendStateSaga_ = function*(action) {
 gbActionPanel.sagas.addSagaWaiter_ = function*() {
   yield *ReduxSaga.takeLatest(actions.ADD_PANEL_ITEM,
                               gbActionPanel.sagas.addSaga_);
-}
+};
 
 /** Listens for REMOVE_PANEL_ITEM events and dispatches Sagas to handle them.
  * @private
@@ -275,7 +312,7 @@ gbActionPanel.sagas.addSagaWaiter_ = function*() {
 gbActionPanel.sagas.removeSagaWaiter_ = function*() {
   yield *ReduxSaga.takeLatest(actions.REMOVE_PANEL_ITEM,
                               gbActionPanel.sagas.removeSaga_);
-}
+};
 
 /** Listens for UPDATE_BACKEND_STATE events and dispatches Sagas to handle them.
  * @private
@@ -283,4 +320,4 @@ gbActionPanel.sagas.removeSagaWaiter_ = function*() {
 gbActionPanel.sagas.updateBackendStateSagaWaiter_ = function*() {
   yield *ReduxSaga.takeLatest(actions.UPDATE_BACKEND_STATE,
                               gbActionPanel.sagas.updateBackendStateSaga_);
-}
+};

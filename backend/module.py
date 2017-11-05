@@ -283,6 +283,7 @@ class Module(_ModuleDatabaseHelper):
     # Update the state.
     self.__update_state_from_module()
 
+
 class ModuleInterface:
   """ Handles global tasks pertaining to the entire set of modules. """
 
@@ -304,6 +305,10 @@ class ModuleInterface:
     self.__module_collection = db.modules
     # Plant preset manager.
     self.__presets = plant_presets
+
+    # Clear the module section in the global state.
+    my_state = state.get_state()
+    my_state.set("modules", {})
 
     # Initialize the serial handler.
     self.__serial.add_message_handler(self.__common_handler)
