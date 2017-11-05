@@ -12,7 +12,7 @@ gbErrorModal.create = function() {
         type: Boolean,
         value: false,
         observer: 'allGoodChanged_',
-        statePath: 'fromBackend.mcuAlive',
+        statePath: 'fromBackend.mcu_alive',
       }
     },
 
