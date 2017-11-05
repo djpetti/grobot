@@ -11,3 +11,12 @@ gbActionPanelMessages.mcuNotResponding =
     level: 'error',
     id: 'mcuNotResponding',
   };
+
+/** Message that gets displayed when there are no modules detected. */
+gbActionPanelMessages.noModules =
+  {
+    title: 'No Grow Modules Detected',
+    description: 'Make sure any grow modules are properly installed.',
+    level: 'warning',
+    id: 'noModules',
+  };

@@ -12,6 +12,7 @@
     <script src="../bower_components/redux/index.js"></script>
     <script src="../bower_components/redux-saga/index.js"></script>
     <script src="../src/js/actions.js"></script>
+    <script src="../src/js/gb-action-panel-messages.js"></script>
     <script src="../src/js/main.js"></script>
 
     <script src="fake_redux.js"></script>
@@ -277,8 +278,8 @@
           main.getReduxStore().setState(fakeState);
 
           // Now make sure the removal saga works.
-          gen = gbActionPanel.sagas.removeSaga_(testAction);
-          next = gen.next();
+          let gen = gbActionPanel.sagas.removeSaga_(testAction);
+          let next = gen.next();
 
           const expectedAction = actions.updatePanelItemList(testAction.id,
                                                              null);
@@ -293,6 +294,77 @@
           next = gen.next();
           assert.equal(undefined, next.value);
           assert.isTrue(next.done);
+
+          done();
+        });
+
+        test('The Saga for a state update handles a dead MCU.',
+             function(done) {
+          // Fake a backend state update action.
+          const testAction = actions.updateBackendState(['mcu_alive'], false);
+
+          // Prime the state to indicate that the MCU is dead.
+          let fakeState = main.getReduxStore().getState();
+          fakeState.fromBackend.mcu_alive = false;
+          main.getReduxStore().setState(fakeState);
+
+          // Make sure the saga works.
+          let gen = gbActionPanel.sagas.updateBackendStateSaga_(testAction);
+          let next = gen.next();
+
+          // Check that the right action got dispatched.
+          const message = gbActionPanelMessages.mcuNotResponding;
+          const expectedAction = actions.addPanelItem(message.title,
+                                                      message.description,
+                                                      message.level,
+                                                      message.id);
+          const expectedEffect = ReduxSaga.effects.put(expectedAction);
+          assert.deepEqual(expectedEffect, next.value);
+
+          // Add an item to the action panel.
+          fakeState.actionPanel.items[message.id] = 'foo';
+          main.getReduxStore().setState(fakeState);
+
+          // The saga should not add the same item again.
+          gen = gbActionPanel.sagas.updateBackendStateSaga_(testAction);
+          next = gen.next();
+
+          assert.deepEqual(undefined, next.value);
+
+          done();
+        });
+
+        test('The saga for a state update handles a live MCU.',
+             function(done) {
+          // Fake a backend state update action.
+          const testAction = actions.updateBackendState(['mcu_alive'], true);
+
+          // Prime the state to indicate that the MCU is alive.
+          let fakeState = main.getReduxStore().getState();
+          fakeState.fromBackend.mcu_alive = true;
+
+          // Add a fake action panel item for it to remove.
+          const message = gbActionPanelMessages.mcuNotResponding;
+          fakeState.actionPanel.items[message.id] = 'foo';
+          main.getReduxStore().setState(fakeState);
+
+          // The saga should remove the item.
+          let gen = gbActionPanel.sagas.updateBackendStateSaga_(testAction);
+          let next = gen.next();
+
+          // Check that the right action got dispatched.
+          const expectedAction = actions.removePanelItem(message.id);
+          const expectedEffect = ReduxSaga.effects.put(expectedAction);
+          assert.deepEqual(expectedEffect, next.value);
+
+          // Remove the item from the action panel.
+          fakeState.actionPanel.items = {};
+
+          // It should not try to remove the item again.
+          gen = gbActionPanel.sagas.updateBackendStateSaga_(testAction);
+          next = gen.next();
+
+          assert.deepEqual(undefined, next.value);
 
           done();
         });

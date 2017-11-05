@@ -6,6 +6,7 @@ gbActionPanel.create = function() {
   console.log('Creating action panel.');
   Polymer({
     is: 'gb-action-panel',
+
     ready: gbActionPanel.ready_,
 
     addItem: gbActionPanel.addItem_,
@@ -24,6 +25,7 @@ gbActionPanel.ready_ = function() {
   let saga = main.getSagaMiddleware();
   saga.run(gbActionPanel.sagas.addSagaWaiter_);
   saga.run(gbActionPanel.sagas.removeSagaWaiter_);
+  saga.run(gbActionPanel.sagas.updateBackendStateSagaWaiter_);
 
   // Dispatch the proper polymer action.
   let store = main.getReduxStore();
@@ -132,6 +134,55 @@ gbActionPanel.updatePanelTop_ = function(panelState) {
   }
 }
 
+/** Controls whether a warning about the MCU status is visible on the panel.
+ * @private
+ * @param state The current Redux state.
+ */
+gbActionPanel.updateMCUAlive_ = function*(state) {
+  // The action panel message.
+  const message = gbActionPanelMessages.mcuNotResponding;
+
+  let action = null;
+  const alive = state.fromBackend.mcu_alive;
+  if (alive && message.id in state.actionPanel.items) {
+    // Remove the message.
+    action = actions.removePanelItem(message.id);
+  } else if (!alive && !(message.id in state.actionPanel.items)) {
+    // Add the message.
+    action = actions.addPanelItem(message.title, message.description,
+                                  message.level, message.id);
+  }
+
+  if (action != null) {
+    // Dispatch the action if we need to.
+    yield ReduxSaga.effects.put(action);
+  }
+}
+
+/** Helper function that determines whether a particular key in the state is a
+ *  sub-key of another one.
+ * @private
+ * @param key The key to check.
+ * @param superKey The posible superkey.
+ * @return True if key is a subkey of superKey, false otherwise.
+ */
+gbActionPanel.isSubkey_ = function(key, superKey) {
+  if (superKey.length > key.length) {
+    // Superkey is more specific, so this can't possibly be true.
+    return false;
+  }
+
+  for (i = 0; i < superKey.length; ++i) {
+    if (superKey[i] != key[i]) {
+      // They don't match at this level.
+      return false;
+    }
+  }
+
+  // Everything appears to match.
+  return true;
+}
+
 // Sub-namespace specifically for saga handlers.
 gbActionPanel.sagas = {};
 
@@ -188,6 +239,28 @@ gbActionPanel.sagas.removeSaga_ = function*(action) {
   yield ReduxSaga.effects.put(actions.updatePanelItemList(action.id, null));
 }
 
+/** Saga that handles updating the action panel when the backend state changes.
+ * @private
+ * @param action The action specifying the state update.
+ */
+gbActionPanel.sagas.updateBackendStateSaga_ = function*(action) {
+  let store = main.getReduxStore();
+  const state = store.getState();
+
+  // Get the panel from the state.
+  let panel = state.actionPanel.actionPanel;
+  if (!panel) {
+    throw new ReferenceError('actionPanel not set in Redux state!');
+  }
+
+  // Check if any update happened that we need to care about.
+  if (gbActionPanel.isSubkey_(['mcu_alive'], action.key)) {
+    // The MCU aliveness status might have changed. We probably need to either
+    // add or remove a message.
+    yield *gbActionPanel.updateMCUAlive_(state);
+  }
+}
+
 /** Listens for ADD_PANEL_ITEM events and dispatches Sagas to handle them.
  * @private
  */
@@ -202,4 +275,12 @@ gbActionPanel.sagas.addSagaWaiter_ = function*() {
 gbActionPanel.sagas.removeSagaWaiter_ = function*() {
   yield *ReduxSaga.takeLatest(actions.REMOVE_PANEL_ITEM,
                               gbActionPanel.sagas.removeSaga_);
+}
+
+/** Listens for UPDATE_BACKEND_STATE events and dispatches Sagas to handle them.
+ * @private
+ */
+gbActionPanel.sagas.updateBackendStateSagaWaiter_ = function*() {
+  yield *ReduxSaga.takeLatest(actions.UPDATE_BACKEND_STATE,
+                              gbActionPanel.sagas.updateBackendStateSaga_);
 }
