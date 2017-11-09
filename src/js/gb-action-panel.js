@@ -38,7 +38,7 @@ gbActionPanel.ready_ = function() {
  * @param description The description of the item.
  * @param level The level of the item. Must by a string in
  *              "normal", "warning", or "error".
- * @returns The DOM node of the added item.
+ * @return The DOM node of the added item.
  */
 gbActionPanel.addItem_ = function(title, description, level) {
   // First, create a new child item.
@@ -190,30 +190,6 @@ gbActionPanel.updateModules_ = function*(state) {
   }
 };
 
-/** Helper function that determines whether a particular key in the state is a
- *  sub-key of another one.
- * @private
- * @param key The key to check.
- * @param superKey The posible superkey.
- * @return True if key is a subkey of superKey, false otherwise.
- */
-gbActionPanel.isSubkey_ = function(key, superKey) {
-  if (superKey.length > key.length) {
-    // Superkey is more specific, so this can't possibly be true.
-    return false;
-  }
-
-  for (i = 0; i < superKey.length; ++i) {
-    if (superKey[i] != key[i]) {
-      // They don't match at this level.
-      return false;
-    }
-  }
-
-  // Everything appears to match.
-  return true;
-};
-
 // Sub-namespace specifically for saga handlers.
 gbActionPanel.sagas = {};
 
@@ -285,13 +261,13 @@ gbActionPanel.sagas.updateBackendStateSaga_ = function*(action) {
   }
 
   // Check if any update happened that we need to care about.
-  if (gbActionPanel.isSubkey_(['mcu_alive'], action.key)) {
+  if (!utilities.areDisjoint(['mcu_alive'], action.key)) {
     // The MCU aliveness status might have changed. We probably need to either
     // add or remove a message.
     yield *gbActionPanel.updateMCUAlive_(state);
   }
 
-  if (gbActionPanel.isSubkey_(['modules'], action.key)) {
+  if (!utilities.areDisjoint(['modules'], action.key)) {
     // One of our modules changed in some way. We might have to show a message
     // about it.
     yield *gbActionPanel.updateModules_(state);

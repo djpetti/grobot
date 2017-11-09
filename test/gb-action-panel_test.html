@@ -14,6 +14,7 @@
     <script src="../src/js/actions.js"></script>
     <script src="../src/js/gb-action-panel-messages.js"></script>
     <script src="../src/js/main.js"></script>
+    <script src="../src/js/utilities.js"></script>
 
     <script src="fake_redux.js"></script>
 
@@ -28,7 +29,7 @@
     </test-fixture>
 
     <script>
-      suite('<gb-action-panel>', function() {
+      suite('gb-action-panel.js', function() {
         var element = null;
 
         setup(function() {
@@ -240,8 +241,8 @@
           fakeState.actionPanel.summaryLevel = testAction.level;
           main.getReduxStore().setState(fakeState);
 
-          gen = gbActionPanel.sagas.addSaga_(testAction);
-          next = gen.next();
+          let gen = gbActionPanel.sagas.addSaga_(testAction);
+          let next = gen.next();
 
           // We don't know what the node object is going to be set to here, so
           // we have to extract it.

@@ -3,6 +3,7 @@ actions = {};
 
 // Updates the Redux state based on the backend state.
 actions.UPDATE_BACKEND_STATE = 'UPDATE_BACKEND_STATE';
+
 // Adds a new item to the action panel. This does everything except save the
 // actual panel item into the state.
 actions.ADD_PANEL_ITEM = 'ADD_PANEL_ITEM';
@@ -16,6 +17,11 @@ actions.REMOVE_PANEL_ITEM = 'REMOVE_PANEL_ITEM';
 actions.UPDATE_PANEL_ITEM_LIST = 'UPDATE_PANEL_ITEM_LIST';
 // Sets the core action panel object in the state.
 actions.SET_ACTION_PANEL = 'SET_ACTION_PANEL';
+// Sets the core growing progress panel object in the state.
+
+actions.SET_GROWING_PROGRESS = 'SET_GROWING_PROGRESS';
+// Updates the list of growing progress items in the state.
+actions.UPDATE_GROWING_PROGRESS_ITEM_LIST = 'UPDATE_GROWING_PROGRESS_ITEM_LIST';
 
 /** Action creator that creates an UPDATE_BACKEND_STATE.
  * @param key The key for the part of the state we are updating. If it is an
@@ -25,7 +31,7 @@ actions.SET_ACTION_PANEL = 'SET_ACTION_PANEL';
  */
 actions.updateBackendState = function(key, state) {
   return {type: actions.UPDATE_BACKEND_STATE, key, state};
-}
+};
 
 /** Action creator that creates an ADD_PANEL_ITEM.
  * @param title The title of the item.
@@ -36,7 +42,7 @@ actions.updateBackendState = function(key, state) {
  */
 actions.addPanelItem = function(title, description, level, id) {
   return {type: actions.ADD_PANEL_ITEM, title, description, level, id};
-}
+};
 
 /** Action creator that creates an UPDATE_PANEL_ITEM_LIST.
  * @param id A unique ID that will be used to identify this item.
@@ -46,14 +52,14 @@ actions.addPanelItem = function(title, description, level, id) {
  */
 actions.updatePanelItemList = function(id, item) {
   return {type: actions.UPDATE_PANEL_ITEM_LIST, id, item};
-}
+};
 
 /** Action creator that creates a REMOVE_PANEL_ITEM.
  * @param id The unique ID of the item, specified at creation time.
  */
 actions.removePanelItem = function(id) {
   return {type: actions.REMOVE_PANEL_ITEM, id};
-}
+};
 
 /** Action creator that creates a SET_ACTION_PANEL.
  * @param actionPanel The action panel node.
@@ -61,7 +67,24 @@ actions.removePanelItem = function(id) {
  */
 actions.setActionPanel = function(actionPanel) {
   return {type: actions.SET_ACTION_PANEL, actionPanel};
-}
+};
+
+/** Action creator that creates a SET_GROWING_PROGRESS.
+ * @param growingProgress The growing progress panel node.
+ * @returns The created action.
+ */
+actions.setGrowingProgress = function(growingProgress) {
+  return {type: actions.SET_GROWING_PROGRESS, growingProgress};
+};
+
+/** Action creator that creates a UPDATE_GROWING_PROGESS_ITEM_LIST.
+ * @param permanentID The permanent ID of the module that this item represents.
+ * @param node The node of the added item, or null if we want to remove the
+ * item.
+ */
+actions.updateGrowingProgressItemList = function(permanentID, node) {
+  return {type: actions.UPDATE_GROWING_PROGRESS_ITEM_LIST, permanentID, node};
+};
 
 /** The initial state of the application. */
 actions.initialState = {
@@ -69,6 +92,7 @@ actions.initialState = {
   fromBackend: {
     // Whether the MCU is currently active.
     mcu_alive: true,
+    // List of connected grow modules.
     modules: {},
   },
 
@@ -86,6 +110,15 @@ actions.initialState = {
 
     // The panel gives a "summary" message that has a level also.
     summaryLevel: 'normal',
+  },
+
+  // Growing progress panel data.
+  growingProgress: {
+    // Singleton growing progress panel for the main view.
+    growingProgress: null,
+    // What items are currently visible in the panel. They are indexed by module
+    // permanent ID.
+    items: {},
   },
 };
 
@@ -113,7 +146,6 @@ actions.fromBackendReducer_ = function(state = {}, action) {
           // Add a new level to the state.
           level[key] = {};
         }
-        console.log(JSON.stringify(level));
         level = level[key];
       }
 
@@ -150,51 +182,51 @@ actions.actionPanelReducer_ = function(state = {}, action) {
     // in the panel.
     if (state.numError > 0) {
       state.summaryLevel = 'error';
-    } else if (new_state.numWarning > 0) {
+    } else if (newState.numWarning > 0) {
       state.summaryLevel = 'warning';
     } else {
       state.summaryLevel = 'normal';
     }
   };
 
-  let new_state = Object.assign({}, state);
+  let newState = Object.assign({}, state);
   let panel = null;
 
   switch (action.type) {
     case actions.SET_ACTION_PANEL:
-      new_state.actionPanel = action.actionPanel;
-      return new_state;
+      newState.actionPanel = action.actionPanel;
+      return newState;
 
     case actions.ADD_PANEL_ITEM:
       switch (action.level) {
         case 'normal':
-          ++new_state.numNormal;
+          ++newState.numNormal;
           break;
         case 'warning':
-          ++new_state.numWarning;
+          ++newState.numWarning;
           break;
         case 'error':
-          ++new_state.numError;
+          ++newState.numError;
           break;
         default:
           console.error('Unknown action type: ' + action.level);
           return state;
       }
 
-      updateSummaryLevel(new_state);
+      updateSummaryLevel(newState);
 
-      return new_state;
+      return newState;
 
     case actions.UPDATE_PANEL_ITEM_LIST:
       if (action.item) {
         // All we really have to do now is save the item by ID.
-        new_state.items[action.id] = action.item;
+        newState.items[action.id] = action.item;
       } else {
         // Delete the item.
-        delete new_state.items[action.id];
+        delete newState.items[action.id];
       }
 
-      return new_state;
+      return newState;
 
     case actions.REMOVE_PANEL_ITEM:
       panel = state.actionPanel;
@@ -205,33 +237,62 @@ actions.actionPanelReducer_ = function(state = {}, action) {
       }
 
       // Get the item with that ID.
-      let to_remove = new_state.items[action.id];
+      let to_remove = newState.items[action.id];
       const level = to_remove.getLevel();
 
       // Decrement the level counters appropriately.
       switch (level) {
         case 'normal':
-          --new_state.numNormal;
+          --newState.numNormal;
           break;
         case 'warning':
-          --new_state.numWarning;
+          --newState.numWarning;
           break;
         case 'error':
-          --new_state.numError;
+          --newState.numError;
           break;
         default:
           console.error('Unknown action type: ' + action.level);
           return state;
       }
 
-      updateSummaryLevel(new_state);
+      updateSummaryLevel(newState);
 
-      return new_state;
+      return newState;
 
     default:
-      return state
+      return state;
   }
-}
+};
+
+/** Reducer for the growing progress panel.
+ * @private
+ * @param state The current state.
+ * @param action The action we want to modify the state with.
+ * @returns The new state.
+ */
+actions.growingProgressReducer_ = function(state = {}, action) {
+  let newState = Object.assign({}, state);
+
+  switch (action.type) {
+    case actions.SET_GROWING_PROGRESS:
+      newState.growingProgress = action.growingProgress;
+      return newState;
+
+    case actions.UPDATE_GROWING_PROGRESS_ITEM_LIST:
+      if (action.node) {
+        // Add the item to the list in the state.
+        newState.items[action.permanentID] = action.node;
+      } else {
+        // Delete the item.
+        delete newState.items[action.permanentID];
+      }
+      return newState;
+
+    default:
+      return state;
+  }
+};
 
 /** Reducer for the GroBot app
 * @param state The current state.
@@ -242,5 +303,7 @@ actions.grobotAppReducer = function(state = actions.initialState, action) {
   return {
     fromBackend: actions.fromBackendReducer_(state.fromBackend, action),
     actionPanel: actions.actionPanelReducer_(state.actionPanel, action),
+    growingProgress: actions.growingProgressReducer_(state.growingProgress,
+                                                     action),
   };
 };
