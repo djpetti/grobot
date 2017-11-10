@@ -144,6 +144,8 @@ def main():
                       help="Use this when running in a container.")
   parser.add_argument("-k", "--keep_open", action="store_true",
                       help="Keep browsers open after running tests.")
+  parser.add_argument("-s", "--skip_tests", action="store_true",
+                      help="Don't run unit tests.")
   args = parser.parse_args()
 
   # Build the polymer app.
@@ -157,7 +159,7 @@ def main():
     xvfb = setup_container()
 
   # Run the tests.
-  if not run_all_tests(args.keep_open):
+  if (not args.skip_tests and not run_all_tests(args.keep_open)):
     if not args.force:
       print("ERROR: Tests failed, not continuing.")
       sys.exit(1)
