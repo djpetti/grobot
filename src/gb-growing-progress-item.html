@@ -1,0 +1,46 @@
+<link rel="import" href="../bower_components/iron-image/iron-image.html">
+<link rel="import" href="../bower_components/paper-item/paper-icon-item.html">
+<link rel="import" href="../bower_components/paper-item/paper-item.html">
+<link rel="import" href="../bower_components/paper-item/paper-item-body.html">
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="shared-styles.html">
+
+<dom-module id="gb-growing-progress-item">
+  <template>
+    <style include="shared-styles">
+      .grow-progress {
+        --paper-progress-active-color: #21DB67;
+
+        width: 90%;
+        margin-top: 10px;
+      }
+
+      .grow-icon {
+        width: 60px;
+        height: 60px;
+        float: right;
+        vertical-align: middle;
+        margin-bottom: 10px;
+      }
+    </style>
+
+    <paper-item>
+      <paper-item-body two-line>
+        <div class="status-item-title" id="name">Empty Module</div>
+        <div class="text-light" id="daysRemaining">Click to assign a growing task.</div>
+        <paper-progress class="grow-progress" id="progress" value="0" min="0" max="100"></paper-progress>
+      </paper-item-body>
+      <paper-item-icon>
+        <iron-image class="grow-icon" id="icon" src="../images/icon_unknown.svg" alt="unknown plant">
+        </iron-image>
+      </paper-item-icon>
+    </paper-item>
+
+  </template>
+
+  <script src="js/gb-growing-progress-item.js"></script>
+  <script>
+    gbGrowingProgressItem.create();
+  </script>
+
+</dom-module>

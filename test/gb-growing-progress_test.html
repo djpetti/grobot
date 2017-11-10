@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, user-scalable=yes">
+
+    <title>gb-growing-progress-test</title>
+
+    <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+    <script src="../../web-component-tester/browser.js"></script>
+    <script src="../bower_components/polymer-redux/polymer-redux.js"></script>
+    <script src="../bower_components/redux/index.js"></script>
+    <script src="../bower_components/redux-saga/index.js"></script>
+    <script src="../src/js/actions.js"></script>
+    <script src="../src/js/gb-action-panel-messages.js"></script>
+    <script src="../src/js/main.js"></script>
+    <script src="../src/js/utilities.js"></script>
+
+    <script src="fake_redux.js"></script>
+
+    <link rel="import" href="../src/gb-growing-progress.html">
+    <link rel="import" href="../src/gb-growing-progress-item.html">
+  </head>
+  <body>
+    <test-fixture id="gbGrowingProgressFixture">
+      <template>
+        <gb-growing-progress></gb-growing-progress>
+      </template>
+    </test-fixture>
+
+    <script>
+      suite('gb-growing-progress.js', function() {
+        var element = null;
+
+        setup(function() {
+          // Initialize mock Redux state for testing.
+          fakeRedux.store.initFakeState();
+
+          // This only works in the setup() function...
+          element = fixture('gbGrowingProgressFixture');
+          // Set the panel in the fake state.
+          let fakeStore = main.getReduxStore();
+          let fakeState = fakeStore.getState();
+          fakeState.growingProgress.growingProgress = element;
+          fakeStore.setState(fakeState);
+        });
+
+        /** Helper function that adds a new item to the growing progress panel,
+         * and updates the fake Redux state accordingly.
+         * @private
+         * @param permanentID The permanent ID of the module associated with the
+         *                    item.
+         * @param name The name of the item.
+         * @param daysTotal The total days that the item must be grown for.
+         * @param daysElapsed The number of days that the item has been growing
+         *                    for.
+         * @param icon The url of the icon to use for the item.
+         * @returns The added item node.
+         */
+        addItem_ = function(permanentID, name, daysTotal, daysElapsed, icon) {
+          const item = element.addItem(name, daysTotal, daysElapsed, icon);
+          let fakeState = main.getReduxStore().getState();
+
+          // Add to the fake state.
+          fakeState.growingProgress.items[permanentID] = item;
+          main.getReduxStore().setState(fakeState);
+
+          return item;
+        };
+
+        /** Helper function that removes an item from the action panel, and
+         * updates the fake Redux state accordingly.
+         * @private
+         * @param permanentID The permanent ID of the module associated with the
+         *                    item to remove.
+         */
+        removeItem_ = function(permanentID) {
+          // First, get the node, which should already be set in the fake state.
+          const node =
+              main.getReduxStore().getState().actionPanel.items[permanentID];
+          // Now, remove the node.
+          element.removeItem(node);
+        };
+
+        test('instantiating the element works', function(done) {
+          console.log(element);
+          assert.equal(element.is, 'gb-growing-progress');
+          const dispatchedActions = main.getReduxStore().getDispatchedActions();
+
+          // Make sure we dispatched the SET_GROWING_PROGRESS action on creation.
+          assert.equal(1, dispatchedActions.length);
+          assert.equal(dispatchedActions[0].type, actions.SET_GROWING_PROGRESS);
+          assert.equal(element, dispatchedActions[0].growingProgress);
+
+          done();
+        });
+
+        test('adding an empty item works', function(done) {
+          // Try adding an empty item.
+          const item = element.addEmptyItem();
+
+          // Make sure the empty panel message is no longer displayed.
+          const emptyMessage = element.$.emptyMessage;
+          assert.equal('none', emptyMessage.style.display);
+
+          // Make sure it added the item.
+          assert.deepEqual(item, Polymer.dom(element).firstChild);
+
+          // Make sure the item itself was initialized appropriately.
+          assert.equal('Empty Module', item.$.name.textContent);
+
+          done();
+        });
+
+        test('adding a non-empty item works', function(done) {
+          // Try adding a non-empty item.
+          const item = element.addItem('plant', 30, 15, 'icon');
+
+          // Make sure the empty panel message is no longer displayed.
+          const emptyMessage = element.$.emptyMessage;
+          assert.equal('none', emptyMessage.style.display);
+          Polymer.dom.flush();
+
+          // Make sure it added the item.
+          assert.deepEqual(item, Polymer.dom(element).firstChild);
+
+          // Make sure the item was initialized appropriately.
+          assert.equal('plant', item.$.name.textContent);
+          assert.equal('15 days remaining', item.$.daysRemaining.textContent);
+          assert.equal(15, item.$.progress.value);
+          assert.equal(30, item.$.progress.max);
+          assert.equal('icon', item.$.icon.src);
+
+          done();
+        });
+
+        test('removing an item works', function(done) {
+          // Store the initial number of child nodes.
+          const initialNodes = Polymer.dom(element).children.length;
+
+          // First, create an item that will be removed.
+          const item = addItem_('42', 'plant', 30, 15, 'icon');
+          Polymer.dom.flush();
+
+          assert.equal(initialNodes + 1, Polymer.dom(element).children.length);
+
+          // Try removing it.
+          const gotItem = element.removeItem(42);
+          Polymer.dom.flush();
+
+          // Make sure it is no longer in the DOM.
+          assert.equal(initialNodes, Polymer.dom(element).children.length);
+
+          done();
+        });
+
+        test('updating module list handles removed modules', function(done) {
+          const initialNodes = Polymer.dom(element).children.length;
+
+          // Set the state initially to make it look like we have an item in the
+          // panel that's no longer present in the system.
+          addItem_('42', 'plant', 30, 15, 'icon');
+          Polymer.dom.flush();
+          assert.equal(initialNodes + 1, Polymer.dom(element).children.length);
+
+          // Try updating.
+          const fakeState = main.getReduxStore().getState();
+          let gen = gbGrowingProgress.updateModules_(fakeState);
+          let next = gen.next();
+          Polymer.dom.flush();
+
+          // The generator should have yielded a removal action.
+          const expectedAction =
+              actions.updateGrowingProgressItemList('42', null);
+          const expectedEffect = ReduxSaga.effects.put(expectedAction);
+          console.log(expectedEffect);
+          console.log(next.value);
+          assert.deepEqual(expectedEffect, next.value);
+
+          // It should have also removed the item it added.
+          assert.equal(initialNodes, Polymer.dom(element).children.length);
+
+          // It should be done now.
+          next = gen.next();
+          assert.equal(undefined, next.value);
+          assert.isTrue(next.done);
+
+          done();
+        });
+
+        test('updating the module list handles added modules', function(done) {
+          // Set the state to include a new module.
+          let fakeState = main.getReduxStore().getState();
+          fakeState.fromBackend.modules['42'] =
+              {name: 'plant', icon_url: 'icon',
+               timing: {'grow_days': 30, 'grow_days_elapsed': 15}};
+          main.getReduxStore().setState(fakeState);
+
+          let gen = gbGrowingProgress.updateModules_(fakeState);
+          let next = gen.next();
+          Polymer.dom.flush();
+
+          // An item should have been added to the panel.
+          const item = Polymer.dom(element).firstChild;
+          assert.equal('plant', item.$.name.textContent);
+          assert.equal('15 days remaining', item.$.daysRemaining.textContent);
+          assert.equal(15, item.$.progress.value);
+          assert.equal(30, item.$.progress.max);
+          assert.equal('icon', item.$.icon.src);
+
+          // An add action should have been yielded by the generator.
+          const expectedAction =
+              actions.updateGrowingProgressItemList('42', item);
+          const expectedEffect = ReduxSaga.effects.put(expectedAction);
+          assert.deepEqual(expectedEffect, next.value);
+
+          // It should be done now.
+          next = gen.next();
+          assert.equal(undefined, next.value);
+          assert.isTrue(next.done);
+
+          done();
+        });
+      });
+
+    </script>
+  </body>
+</html>

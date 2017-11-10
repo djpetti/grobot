@@ -15,6 +15,7 @@
     <script src="../src/js/main.js"></script>
 
     <link rel="import" href="../src/gb-action-panel.html">
+    <link rel="import" href="../src/gb-growing-progress.html">
   </head>
   <body>
     <test-fixture id="gbActionFixture">
@@ -24,13 +25,21 @@
       </template>
     </test-fixture>
 
+    <test-fixture id="gbGrowingProgressFixture">
+      <template>
+        <!-- This will be replaced with our fake growing progress panel for
+        testing. -->
+        <gb-growing-progress></gb-growing-progress>
+      </template>
+    </test-fixture>
+
     <script>
       suite('actions.js', function() {
-        var FakeActionPanelItem = null;
         var dispatchSaveAction = null;
+        var FakeActionPanelItem = null;
 
 				setup(function() {
-          // A fake class for action panel items.
+					// A fake class for action panel items.
           FakeActionPanelItem = class {
             constructor(title, description, level) {
               this.title_ = title;
@@ -49,7 +58,7 @@
             getLevel() {
               return this.level_;
             }
-          }
+          };
 
           /**
            * @private
@@ -74,26 +83,15 @@
             return actions.grobotAppReducer(currentState, saveItemAction)
           }
 
-				  // Implements a fake action panel that allows us to add stuff.
-				  stub('gb-action-panel', {
-            /** Adds an item to the fake action panel.
-             * @param title The title of the item.
-             * @param description The description of the item.
-             * @param level The level of the item.
-             * @param id A unique ID for the item.
-             * @returns The item that it added, which in this case is just an
-             * object instead of a DOM node. */
-				    addItem: function(title, description, level, id) {
-				      return new FakeActionPanelItem(title, description, level);
-				    },
-
-				    /** Removes an item from the fake action panel.
-				     * @param id The id of the item to remove. */
-				    removeItem: function(id) {},
-				  });
-
+				  // Implements a fake action panel that is essentially empty.
+				  stub('gb-action-panel', {});
           // Use the stub instead of the actual one.
 				  replace('gb-action-panel').with('fake-gb-action-panel');
+
+				  // Implements a fake growing progress panel that is essentially empty.
+				  stub('gb-growing-progress', {});
+				  // Use the stub instead of the actual one.
+				  replace('gb-growing-progress').with('fake-gb-growing-progress');
 				});
 
         test('an unknown action does not result in a state change',
@@ -284,6 +282,59 @@
 
           done();
         });
+
+        test('the SET_GROWING_PROGRESS action works', function(done) {
+          // Get the testing panel.
+          let panel = fixture('gbGrowingProgressFixture');
+
+          // Register the panel.
+          const registerAction = actions.setGrowingProgress(panel);
+          const state = actions.initialState;
+          const newState = actions.grobotAppReducer(state, registerAction);
+
+          // Make sure the panel got set in the new state.
+          assert.deepEqual(panel, newState.growingProgress.growingProgress);
+
+          done();
+        });
+
+				test('the UPDATE_GROWING_PROGRESS_ITEM_LIST action can add an item',
+				     function(done) {
+          // Make a fake item to add, which can really be anything.
+          const item = {};
+
+          // Add it using the action.
+          const updateItemListAction =
+              actions.updateGrowingProgressItemList(42, item);
+          const state = actions.initialState;
+          const newState =
+              actions.grobotAppReducer(state, updateItemListAction);
+
+          // Check that it added the item.
+          assert.deepEqual(item, newState.growingProgress.items[42]);
+
+				  done();
+				});
+
+				test('the UPDATE_GROWING_PROGRESS_ITEM_LIST action can remove an item',
+				     function(done) {
+				  // Set an initial item in the state.
+				  const item = {};
+				  // Deep copy our initial state to be sure we don't pollute it.
+				  let state = JSON.parse(JSON.stringify(actions.initialState));
+          state.growingProgress.items[42] = item;
+
+          // Remove it with the action.
+          const updateItemListAction =
+              actions.updateGrowingProgressItemList(42, null);
+          const newState =
+              actions.grobotAppReducer(state, updateItemListAction);
+
+          // Check that it was removed.
+          assert.isTrue(!(42 in newState.growingProgress.items));
+
+          done();
+				});
       });
     </script>
   </body>

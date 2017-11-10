@@ -12,6 +12,7 @@ import unittest
 from backend import server
 from backend.module_sim import simulator
 from backend.module_sim import base_module
+from backend.module_sim import grow_module
 
 
 """ Script to manage building and testing the web application. """
@@ -134,14 +135,17 @@ def main():
                       help="Rebuild polymer app and serve from build/bundled.")
   parser.add_argument("-t", "--test-only", action="store_true",
                       help="Only run the tests and nothing else.")
-  parser.add_argument("-m", "--module_simulation", action="store_true",
-                      help="Run with simulated module stack.")
+  parser.add_argument("-m", "--module_simulation", type=int, default=-1,
+                      help="Run with simulated module stack." + \
+                           " An argument specifies the number of grow modules.")
   parser.add_argument("-f", "--force", action="store_true",
                       help="Continue even if the tests fail.")
   parser.add_argument("-c", "--containerized", action="store_true",
                       help="Use this when running in a container.")
   parser.add_argument("-k", "--keep_open", action="store_true",
                       help="Keep browsers open after running tests.")
+  parser.add_argument("-s", "--skip_tests", action="store_true",
+                      help="Don't run unit tests.")
   args = parser.parse_args()
 
   # Build the polymer app.
@@ -155,7 +159,7 @@ def main():
     xvfb = setup_container()
 
   # Run the tests.
-  if not run_all_tests(args.keep_open):
+  if (not args.skip_tests and not run_all_tests(args.keep_open)):
     if not args.force:
       print("ERROR: Tests failed, not continuing.")
       sys.exit(1)
@@ -165,23 +169,35 @@ def main():
   if args.containerized:
     teardown_container(xvfb)
 
-  # Run the dev server.
-  if not args.test_only:
-    print("Starting dev server...")
+  if args.test_only:
+    # If we just had to run the tests, we're done now.
+    return
 
-    # Enable MCU simulation if necessary.
-    settings = {}
-    if args.module_simulation:
-      sim = simulator.Simulator()
-      settings["mcu_serial"] = sim.get_serial_name()
+  print("Starting dev server...")
 
-      # We always have at least the base module.
-      sim.add_module(base_module.BaseModule)
+  settings = {}
+  if args.module_simulation >= 0:
+    # Save the serial port for MCU simulation.
+    sim = simulator.Simulator()
+    settings["mcu_serial"] = sim.get_serial_name()
 
-      # Start the simulator running.
-      sim.start()
+  # Initialize the server here so all our handlers are configured when we
+  # start the MCU simulation.
+  server.init_server(dev_mode=(not args.production), override_settings=settings)
 
-    server.main(dev_mode=(not args.production), override_settings=settings)
+  # Enable MCU simulation if necessary.
+  if args.module_simulation >= 0:
+    # We always have at least the base module.
+    sim.add_module(base_module.BaseModule)
+    for i in range(0, args.module_simulation):
+      # Add grow modules as requested.
+      sim.add_module(grow_module.GrowModule)
+
+    # Start the simulator running.
+    sim.start()
+
+  # Run the server.
+  server.run_server()
 
 
 if __name__ == "__main__":

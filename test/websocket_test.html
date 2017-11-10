@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, user-scalable=yes">
 
-    <title>test_el-element test</title>
+    <title>websocket-test</title>
 
     <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
     <script src="../../web-component-tester/browser.js"></script>
@@ -21,7 +21,7 @@
   </head>
   <body>
     <script>
-      suite('actions.js', function() {
+      suite('websocket.js', function() {
         // The websockets.Backend instance to use for testing.
         var socketHandler;
 
@@ -92,31 +92,6 @@
           assert.equal(2, actions.length);
           assert.deepEqual(['mcu_alive'], actions[1].key);
           assert.isFalse(actions[1].state);
-
-          done();
-        });
-
-        test('The action panel reflects a state update request.',
-             function(done) {
-          // Manually update the state, so that it indicates that the MCU is
-          // dead.
-          let fakeState = main.getReduxStore().getState();
-          fakeState.fromBackend.mcu_alive = false;
-
-          // Now send a message to force it to update with the fake state.
-          const message = {type: 'state', key: ['mcu_alive'], state: false};
-          socketHandler.processMessage_(message);
-
-          // We should see two actions at this point. One is the initial state
-          // update action, and one is the action panel update action.
-          const actions = main.getReduxStore().getDispatchedActions();
-          assert.equal(2, actions.length);
-          const notRespondingMessage = gbActionPanelMessages.mcuNotResponding;
-          assert.equal(notRespondingMessage.title, actions[1].title);
-          assert.equal(notRespondingMessage.description,
-                       actions[1].description);
-          assert.equal(notRespondingMessage.level, actions[1].level);
-          assert.equal(notRespondingMessage.id, actions[1].id);
 
           done();
         });
