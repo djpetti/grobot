@@ -123,8 +123,8 @@ def load_plant_presets(settings):
   return preset_manager
 
 
-def main(dev_mode=False, override_settings={}):
-  """ Runs the main server event loop.
+def init_server(dev_mode=False, override_settings={}):
+  """ Initializes the main server.
   Args:
     dev_mode: If set to True, it will serve data from the base directory instead
               of from the build directory. This is useful if we want to debug
@@ -169,8 +169,22 @@ def main(dev_mode=False, override_settings={}):
     # Initialize module system.
     module.ModuleInterface(serial, db, plant_presets)
 
+def run_server():
+  """ Runs the server forever. """
   logger.info("Starting server...")
   tornado.ioloop.IOLoop.current().start()
+
+
+def main(dev_mode=False, override_settings={}):
+  """ Runs the main server event loop.
+  Args:
+    dev_mode: If set to True, it will serve data from the base directory instead
+              of from the build directory. This is useful if we want to debug
+              stuff locally without running 'polymer build.'
+    override_settings: Settings that will be used to override the ones loaded
+                       from the file. """
+  init_server(dev_mode=dev_mode, override_settings=override_settings)
+  run_server()
 
 
 if __name__ == "__main__":
