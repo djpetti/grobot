@@ -221,6 +221,35 @@
 
           done();
         });
+
+        test('updating the module list handles changed modules',
+             function(done) {
+          // Add an item to both the frontend and backend states.
+          let fakeState = main.getReduxStore().getState();
+          fakeState.fromBackend.modules['42'] =
+            {name: 'plant', icon_url: 'icon',
+             timing: {'grow_days': 30, 'grow_days_elapsed': 16}};
+          addItem_('42', 'plant', 30, 15, 'icon');
+
+          // Try updating the module list.
+          const gen = gbGrowingProgress.updateModules_(fakeState);
+          let next = gen.next();
+          Polymer.dom.flush();
+
+          // The item in the panel should have been updated.
+          const item = Polymer.dom(element).firstChild;
+          assert.equal('plant', item.$.name.textContent);
+          assert.equal('14 days remaining', item.$.daysRemaining.textContent);
+          assert.equal(16, item.$.progress.value);
+          assert.equal(30, item.$.progress.max);
+          assert.equal('icon', item.$.icon.src);
+
+          // No action should have been yielded.
+          assert.equal(undefined, next.value);
+          assert.isTrue(next.done);
+
+          done();
+        });
       });
 
     </script>
