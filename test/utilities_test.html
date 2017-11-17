@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, user-scalable=yes">
+
+    <title>utilities-test</title>
+
+    <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+    <script src="../../web-component-tester/browser.js"></script>
+    <script src="../bower_components/polymer-redux/polymer-redux.js"></script>
+    <script src="../bower_components/redux/index.js"></script>
+    <script src="../src/js/main.js"></script>
+    <script src="../src/js/utilities.js"></script>
+  </head>
+  <body>
+    <script>
+      suite('utilities.js', function() {
+
+        test('isSubkey works under normal conditions', function(done) {
+          const key = ['foo', 'bar'];
+          const subKey = ['foo', 'bar', 'baz'];
+
+          assert.isTrue(utilities.isSubkey(subKey, key));
+
+          // Make one that it doesn't belong to.
+          const otherKey = ['foo', 'bar', 'bax'];
+          assert.isFalse(utilities.isSubkey(subKey, otherKey))
+
+          done();
+        });
+
+        test('isSubkey rejects a super-key that is more specific',
+             function(done) {
+          const key = ['foo', 'bar'];
+          const otherKey = ['foo', 'bar', 'baz'];
+
+          assert.isFalse(utilities.isSubkey(key, otherKey));
+
+          done();
+        });
+
+        test('anything is a subkey of an empty key', function(done) {
+          const key = ['foo', 'bar', 'baz'];
+
+          assert.isTrue(utilities.isSubkey(key, []));
+
+          done();
+        });
+
+        test('isDisjoint works under normal conditions', function(done) {
+          // These two keys should be disjoint.
+          const key1 = ['foo', 'bar', 'baz'];
+          const key2 = ['foo', 'bar', 'bax'];
+
+          assert.isTrue(utilities.areDisjoint(key1, key2));
+
+          key3 = ['foo'];
+
+          // These two keys should not be.
+          assert.isFalse(utilities.areDisjoint(key1, key3));
+          assert.isFalse(utilities.areDisjoint(key2, key3));
+
+          done();
+        });
+      });
+    </script>
+  </body>
+</html>
