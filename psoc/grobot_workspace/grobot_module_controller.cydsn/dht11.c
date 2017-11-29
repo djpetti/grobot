@@ -108,8 +108,16 @@ void decode_dht_data(void){
             g_temperature_values[7-j] = 0;
         }
     }
-    g_decoded_temperature_data = (uint8_t)((g_temperature_values[7]<<7) + (g_temperature_values[6]<<6) + (g_temperature_values[5]<<5) + (g_temperature_values[4]<<4) + (g_temperature_values[3] <<3) + (g_temperature_values[2] <<2) + (g_temperature_values[1]<<1) + g_temperature_values[0]);
-    g_decoded_humidity_data = (uint8_t)((g_humidity_values[7]<<7) + (g_humidity_values[6]<<6) + (g_humidity_values[5]<<5) + (g_humidity_values[4]<<4) + (g_humidity_values[3] <<3) + (g_humidity_values[2] <<2) + (g_humidity_values[1]<<1) + g_humidity_values[0]);
+    g_decoded_temperature_data = (uint8_t)((g_temperature_values[7]<<7) + 
+                (g_temperature_values[6]<<6) + (g_temperature_values[5]<<5) + 
+                (g_temperature_values[4]<<4) + (g_temperature_values[3] <<3) + 
+                (g_temperature_values[2] <<2) + (g_temperature_values[1]<<1) + 
+                g_temperature_values[0]);
+    g_decoded_humidity_data = (uint8_t)((g_humidity_values[7]<<7) + 
+                (g_humidity_values[6]<<6) + (g_humidity_values[5]<<5) + 
+                (g_humidity_values[4]<<4) + (g_humidity_values[3] <<3) + 
+                (g_humidity_values[2] <<2) + (g_humidity_values[1]<<1) + 
+                g_humidity_values[0]);
     
     // Now the data is decoded
     g_decode_flag = 1;
@@ -220,7 +228,8 @@ void dht_start(){
                     CyDelayUs(50);
                     DHT_Pin_Write(0);
                     Delay_Timer_WritePeriod(DELAY_ACQUISITION);
-                    // Call the delay function to set the DHT_Pin as low for 20ms 
+                    // Call the delay function to set 
+                    //the DHT_Pin as low for 20ms 
                     delay_funct();
                 }    
                 
@@ -230,11 +239,13 @@ void dht_start(){
                     DHT_Pin_Write(1);
                     // Enable DHT_Pin_ISR to get data from the DHT11 sensor
                     DHT_Pin_ISR_Enable();
-                    // To keep the DHT_Pin as High for 30us, the below function is called 
+                    // To keep the DHT_Pin as High for 30us, 
+                    //the below function is called 
                     CyDelayUs(30);
                     Delay_Timer_WritePeriod(DELAY_PROCESSING);
                     Control_Reg_Delay_Timer_Write(0);
-                    // Change the Executed and Count status to decode the DHT11 values
+                    // Change the Executed and Count status 
+                    //to decode the DHT11 values
                     g_executed = 2;
                     g_count = 0;
                 }
