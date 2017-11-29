@@ -20,7 +20,6 @@ int g_countvalues_datatimer[44] = {0};
 int g_executed;
 int g_count;
 int g_risingedge_counts;
-int g_has_been_executed;
 
 _CY_ISR_PROTO(Delay_Timer_ISR_Handler);
 _CY_ISR_PROTO(DHT_Pin_ISR_Handler);
@@ -200,8 +199,6 @@ void dht_init(){
     // Initilize g_count to 0 and g_executed to 1
     g_count = 0;
     g_executed = 1;
-    
-    g_has_been_executed = 0;
 }   
 
 
@@ -257,10 +254,7 @@ void dht_start(){
             g_executed = 1;
             g_count = 0;
         }    
-    } while (g_decode_flag == 1);
-    g_has_been_executed = 1;
-           
-    }    
+    } while (g_decode_flag == 1);    
     
     // When exited we will have the data in the two "decoded" variables
 }    
