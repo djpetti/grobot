@@ -249,6 +249,7 @@ void dht_start(){
                     g_count = 0;
                 }    
             
+            } while (g_decode_flag == 1);
             g_has_been_executed = 1;
             break; 
             
