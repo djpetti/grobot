@@ -229,7 +229,7 @@ void dht_start(){
                     DHT_Pin_Write(0);
                     Delay_Timer_WritePeriod(DELAY_ACQUISITION);
                     // Call the delay function to set 
-                    //the DHT_Pin as low for 20ms 
+                    // the DHT_Pin as low for 20ms 
                     delay_funct();
                 }    
                 
@@ -240,12 +240,12 @@ void dht_start(){
                     // Enable DHT_Pin_ISR to get data from the DHT11 sensor
                     DHT_Pin_ISR_Enable();
                     // To keep the DHT_Pin as High for 30us, 
-                    //the below function is called 
+                    // the below function is called 
                     CyDelayUs(30);
                     Delay_Timer_WritePeriod(DELAY_PROCESSING);
                     Control_Reg_Delay_Timer_Write(0);
                     // Change the Executed and Count status 
-                    //to decode the DHT11 values
+                    // to decode the DHT11 values
                     g_executed = 2;
                     g_count = 0;
                 }
