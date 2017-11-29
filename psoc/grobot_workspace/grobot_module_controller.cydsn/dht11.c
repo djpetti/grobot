@@ -220,54 +220,46 @@ void dht_start(){
     CyGlobalIntEnable;
     
     // This is going to run until decode dht data is called
-    // After this is done, the loop will end, and the data will
+    // After this is done, the the data will
     // be in the respective variables
-    
-    switch (g_has_been_executed) {
-        case 0:
-            do {
-                
-                if(g_executed == 1 && g_count == 0) {
-                    g_executed = 0;
-                    g_risingedge_counts = 0;
-                    CyDelayUs(50);
-                    DHT_Pin_Write(0);
-                    Delay_Timer_WritePeriod(DELAY_ACQUISITION);
-                    // Call the delay function to set 
-                    // the DHT_Pin as low for 20ms 
-                    delay_funct();
-                } else if(g_count >= 2 && g_executed == 0) {
-                    Control_Reg_Data_Timer_Write(0);
-                    // Write 1 to DHT_Pin 
-                    DHT_Pin_Write(1);
-                    // Enable DHT_Pin_ISR to get data from the DHT11 sensor
-                    DHT_Pin_ISR_Enable();
-                    // To keep the DHT_Pin as High for 30us, 
-                    // the below function is called 
-                    CyDelayUs(30);
-                    Delay_Timer_WritePeriod(DELAY_PROCESSING);
-                    Control_Reg_Delay_Timer_Write(0);
-                    // Change the Executed and Count status 
-                    // to decode the DHT11 values
-                    g_executed = 2;
-                    g_count = 0;
-                } else if(g_decode_flag == 1) {
-                    Control_Reg_Data_Timer_Write(1);
-                    DHT_Pin_ISR_Disable(); 
-                    DHT_Pin_Write(1);   
-                    g_decode_flag = 0;
-                    // Interperates the data from the sensors
-                    decode_dht_data();
-                    g_executed = 1;
-                    g_count = 0;
-                }    
-            
-            } while (g_decode_flag == 1);
-            g_has_been_executed = 1;
-            break; 
-            
-        case 1:
-            break;
+    do {
+        if(g_executed == 1 && g_count == 0) {
+            g_executed = 0;
+            g_risingedge_counts = 0;
+            CyDelayUs(50);
+            DHT_Pin_Write(0);
+            Delay_Timer_WritePeriod(DELAY_ACQUISITION);
+            // Call the delay function to set 
+            // the DHT_Pin as low for 20ms 
+            delay_funct();
+        } else if(g_count >= 2 && g_executed == 0) {
+            Control_Reg_Data_Timer_Write(0);
+            // Write 1 to DHT_Pin 
+            DHT_Pin_Write(1);
+            // Enable DHT_Pin_ISR to get data from the DHT11 sensor
+            DHT_Pin_ISR_Enable();
+            // To keep the DHT_Pin as High for 30us, 
+            // the below function is called 
+            CyDelayUs(30);
+            Delay_Timer_WritePeriod(DELAY_PROCESSING);
+            Control_Reg_Delay_Timer_Write(0);
+            // Change the Executed and Count status 
+            // to decode the DHT11 values
+            g_executed = 2;
+            g_count = 0;
+        } else if(g_decode_flag == 1) {
+            Control_Reg_Data_Timer_Write(1);
+            DHT_Pin_ISR_Disable(); 
+            DHT_Pin_Write(1);   
+            g_decode_flag = 0;
+            // Interperates the data from the sensors
+            decode_dht_data();
+            g_executed = 1;
+            g_count = 0;
+        }    
+    } while (g_decode_flag == 1);
+    g_has_been_executed = 1;
+           
     }    
     
     // When exited we will have the data in the two "decoded" variables
