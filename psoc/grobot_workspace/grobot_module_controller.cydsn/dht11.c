@@ -94,6 +94,8 @@ void decode_dht_data(void){
         g_diff_count_values[i] -= g_countvalues_datatimer[i];
     }
     
+    // Takes in the data from the sensors to be interpreted
+    
     int j;
     for(j=0; j<8; ++j) {
         if(g_diff_count_values[j+3]>100) {
@@ -108,6 +110,9 @@ void decode_dht_data(void){
             g_temperature_values[7-j] = 0;
         }
     }
+    
+    // Decodes the electrical input from the sensors into some sort of data 
+    
     g_decoded_temperature_data = (uint8_t)((g_temperature_values[7]<<7) + 
                 (g_temperature_values[6]<<6) + (g_temperature_values[5]<<5) + 
                 (g_temperature_values[4]<<4) + (g_temperature_values[3] <<3) + 
@@ -255,6 +260,7 @@ void dht_start(){
                     DHT_Pin_ISR_Disable(); 
                     DHT_Pin_Write(1);   
                     g_decode_flag = 0;
+                    // Interperates the data from the sensors
                     decode_dht_data();
                     g_executed = 1;
                     g_count = 0;
