@@ -236,9 +236,7 @@ void dht_start(){
                     // Call the delay function to set 
                     // the DHT_Pin as low for 20ms 
                     delay_funct();
-                }    
-                
-                if(g_count >= 2 && g_executed ==0) {
+                } else if(g_count >= 2 && g_executed == 0) {
                     Control_Reg_Data_Timer_Write(0);
                     // Write 1 to DHT_Pin 
                     DHT_Pin_Write(1);
@@ -253,9 +251,7 @@ void dht_start(){
                     // to decode the DHT11 values
                     g_executed = 2;
                     g_count = 0;
-                }
-                
-                if(g_decode_flag == 1) {
+                } else if(g_decode_flag == 1) {
                     Control_Reg_Data_Timer_Write(1);
                     DHT_Pin_ISR_Disable(); 
                     DHT_Pin_Write(1);   
