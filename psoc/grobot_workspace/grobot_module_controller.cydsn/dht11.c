@@ -212,7 +212,7 @@ void dht_start(){
     
     switch (g_has_been_executed) {
         case 0:
-            for(;;){
+            do {
                 
                 if(g_executed == 1 && g_count == 0) {
                     g_executed = 0;
@@ -249,7 +249,6 @@ void dht_start(){
                     g_count = 0;
                 }    
             
-            }   
             g_has_been_executed = 1;
             break; 
             
